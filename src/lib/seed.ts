@@ -1,0 +1,251 @@
+import { Project, Video, Segment, Tag, Insight } from '@/types';
+
+export const SEED_PROJECTS: Project[] = [
+  {
+    id: 'proj-1',
+    name: "Nitin's Bar",
+    description: 'Social media workspace for @nitin.bartender — alcohol & cocktail content',
+    createdAt: '2025-01-01T00:00:00Z',
+  },
+];
+
+export const SEED_VIDEOS: Video[] = [
+  {
+    id: 'vid-1',
+    projectId: 'proj-1',
+    title: 'The Secret to a Perfect Old Fashioned',
+    fileName: 'old-fashioned.mp4',
+    duration: 45,
+    platform: 'tiktok',
+    language: 'en',
+    formatType: 'short',
+    createdAt: '2025-01-10T10:00:00Z',
+    metrics: { views: 980000, avgWatchTime: 41, retention: 79, saves: 38000, shares: 22000, comments: 4100, follows: 12000 },
+    metricHistory: [
+      { date: '2025-01-17', views: 220000, retention: 81, saves: 9000, shares: 5100, follows: 2800 },
+      { date: '2025-01-24', views: 560000, retention: 80, saves: 22000, shares: 13000, follows: 7100 },
+      { date: '2025-01-31', views: 820000, retention: 79, saves: 32000, shares: 18000, follows: 10200 },
+      { date: '2025-02-07', views: 980000, retention: 79, saves: 38000, shares: 22000, follows: 12000 },
+    ],
+  },
+  {
+    id: 'vid-2',
+    projectId: 'proj-1',
+    title: 'Why Your Cocktails Taste Flat (Fix This Now)',
+    fileName: 'flat-cocktails.mp4',
+    duration: 38,
+    platform: 'instagram',
+    language: 'en',
+    formatType: 'reel',
+    createdAt: '2025-01-24T14:00:00Z',
+    metrics: { views: 1400000, avgWatchTime: 33, retention: 87, saves: 58000, shares: 31000, comments: 7200, follows: 19000 },
+    metricHistory: [
+      { date: '2025-01-31', views: 310000, retention: 89, saves: 13000, shares: 7000, follows: 4200 },
+      { date: '2025-02-07', views: 780000, retention: 88, saves: 31000, shares: 17000, follows: 10500 },
+      { date: '2025-02-14', views: 1180000, retention: 87, saves: 48000, shares: 26000, follows: 16000 },
+      { date: '2025-02-21', views: 1400000, retention: 87, saves: 58000, shares: 31000, follows: 19000 },
+    ],
+  },
+  {
+    id: 'vid-3',
+    projectId: 'proj-1',
+    title: 'I tried 50 Negroni ratios to find the perfect one',
+    fileName: 'negroni-ratio.mp4',
+    duration: 52,
+    platform: 'tiktok',
+    language: 'en',
+    formatType: 'short',
+    createdAt: '2025-02-08T11:00:00Z',
+    metrics: { views: 760000, avgWatchTime: 37, retention: 71, saves: 29000, shares: 14000, comments: 3800, follows: 8200 },
+    metricHistory: [
+      { date: '2025-02-15', views: 180000, retention: 73, saves: 7000, shares: 3400, follows: 1900 },
+      { date: '2025-02-22', views: 430000, retention: 72, saves: 16000, shares: 8000, follows: 4600 },
+      { date: '2025-03-01', views: 620000, retention: 71, saves: 23000, shares: 11000, follows: 6700 },
+      { date: '2025-03-08', views: 760000, retention: 71, saves: 29000, shares: 14000, follows: 8200 },
+    ],
+  },
+  {
+    id: 'vid-4',
+    projectId: 'proj-1',
+    title: 'Whisky Neat vs On Ice — Here\'s the Truth',
+    fileName: 'whisky-neat-ice.mp4',
+    duration: 34,
+    platform: 'instagram',
+    language: 'en',
+    formatType: 'reel',
+    createdAt: '2025-02-22T09:00:00Z',
+    metrics: { views: 2100000, avgWatchTime: 32, retention: 94, saves: 87000, shares: 61000, comments: 14100, follows: 38000 },
+    metricHistory: [
+      { date: '2025-03-01', views: 490000, retention: 95, saves: 20000, shares: 14000, follows: 8800 },
+      { date: '2025-03-08', views: 1100000, retention: 94, saves: 46000, shares: 32000, follows: 20000 },
+      { date: '2025-03-15', views: 1720000, retention: 94, saves: 70000, shares: 50000, follows: 31000 },
+      { date: '2025-03-22', views: 2100000, retention: 94, saves: 87000, shares: 61000, follows: 38000 },
+    ],
+  },
+  {
+    id: 'vid-5',
+    projectId: 'proj-1',
+    title: '3 Bar Hacks Every Bartender Swears By',
+    fileName: 'bar-hacks.mp4',
+    duration: 60,
+    platform: 'youtube',
+    language: 'en',
+    formatType: 'short',
+    createdAt: '2025-03-05T09:00:00Z',
+    metrics: { views: 420000, avgWatchTime: 48, retention: 77, saves: 18000, shares: 9000, comments: 2200, follows: 5400 },
+    metricHistory: [
+      { date: '2025-03-12', views: 95000, retention: 79, saves: 4100, shares: 2100, follows: 1200 },
+      { date: '2025-03-19', views: 240000, retention: 78, saves: 10000, shares: 5100, follows: 3100 },
+      { date: '2025-03-26', views: 350000, retention: 77, saves: 14000, shares: 7100, follows: 4300 },
+      { date: '2025-04-02', views: 420000, retention: 77, saves: 18000, shares: 9000, follows: 5400 },
+    ],
+  },
+];
+
+export const TAG_COLORS: Record<string, string> = {
+  descriptive: '#3b82f6',
+  framework: '#8b5cf6',
+  structural: '#f59e0b',
+  audio: '#10b981',
+  visual: '#ec4899',
+  custom: '#6b7280',
+};
+
+export const SEGMENT_COLORS = [
+  '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b',
+  '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#a855f7',
+];
+
+export const SEED_TAGS: Tag[] = [
+  // Descriptive
+  { id: 't-1', name: 'Hook', category: 'descriptive', group: 'Opening', color: '#3b82f6', usageCount: 14, createdAt: '2025-01-01T00:00:00Z', definition: 'The opening moment designed to stop the scroll' },
+  { id: 't-2', name: 'Talking Head', category: 'descriptive', group: 'Delivery', color: '#3b82f6', usageCount: 16, createdAt: '2025-01-01T00:00:00Z', definition: 'Direct-to-camera speaking segment' },
+  { id: 't-3', name: 'B-Roll', category: 'descriptive', group: 'Visual', color: '#3b82f6', usageCount: 11, createdAt: '2025-01-01T00:00:00Z', definition: 'Supplementary footage over voiceover' },
+  { id: 't-4', name: 'Voiceover', category: 'descriptive', group: 'Audio', color: '#3b82f6', usageCount: 8, createdAt: '2025-01-01T00:00:00Z' },
+  { id: 't-5', name: 'Text Overlay', category: 'descriptive', group: 'Visual', color: '#3b82f6', usageCount: 17, createdAt: '2025-01-01T00:00:00Z' },
+  { id: 't-6', name: 'CTA', category: 'descriptive', group: 'Closing', color: '#3b82f6', usageCount: 12, createdAt: '2025-01-01T00:00:00Z', definition: 'Call to action — follow, save, share' },
+  { id: 't-7', name: 'Pour Shot', category: 'descriptive', group: 'Visual', color: '#3b82f6', usageCount: 10, createdAt: '2025-01-01T00:00:00Z', definition: 'Close-up of liquid being poured — highly shareable visual' },
+  { id: 't-8', name: 'Taste Reaction', category: 'descriptive', group: 'Content', color: '#3b82f6', usageCount: 9, createdAt: '2025-01-01T00:00:00Z', definition: 'Genuine on-camera reaction to tasting the drink' },
+  { id: 't-9', name: 'Technique Demo', category: 'descriptive', group: 'Content', color: '#3b82f6', usageCount: 13, createdAt: '2025-01-01T00:00:00Z', definition: 'Hands-on bartending technique shown in detail' },
+  { id: 't-10', name: 'Montage', category: 'descriptive', group: 'Visual', color: '#3b82f6', usageCount: 6, createdAt: '2025-01-01T00:00:00Z' },
+  { id: 't-11', name: 'Silent Pause', category: 'descriptive', group: 'Delivery', color: '#3b82f6', usageCount: 4, createdAt: '2025-01-01T00:00:00Z' },
+  { id: 't-12', name: 'Bottle Feature', category: 'descriptive', group: 'Content', color: '#3b82f6', usageCount: 7, createdAt: '2025-01-01T00:00:00Z', definition: 'Highlighting a specific spirit or bottle' },
+  // Framework
+  { id: 't-13', name: 'Curiosity Loop', category: 'framework', group: 'Retention', color: '#8b5cf6', usageCount: 15, createdAt: '2025-01-01T00:00:00Z', definition: 'Opens a question the viewer must resolve by watching to the end' },
+  { id: 't-14', name: 'Binary Choice', category: 'framework', group: 'Engagement', color: '#8b5cf6', usageCount: 9, createdAt: '2025-01-01T00:00:00Z', definition: 'Forces the viewer to pick a side, increasing engagement' },
+  { id: 't-15', name: 'Pattern Interrupt', category: 'framework', group: 'Retention', color: '#8b5cf6', usageCount: 12, createdAt: '2025-01-01T00:00:00Z', definition: 'Breaks the expected flow to re-capture attention' },
+  { id: 't-16', name: 'Big Promise', category: 'framework', group: 'Hook', color: '#8b5cf6', usageCount: 13, createdAt: '2025-01-01T00:00:00Z', definition: 'Leads with a bold outcome or transformation' },
+  { id: 't-17', name: 'Identity Loop', category: 'framework', group: 'Connection', color: '#8b5cf6', usageCount: 8, createdAt: '2025-01-01T00:00:00Z', definition: 'Calls out a specific identity — home bartenders, cocktail lovers' },
+  { id: 't-18', name: 'Emotion Spike', category: 'framework', group: 'Connection', color: '#8b5cf6', usageCount: 10, createdAt: '2025-01-01T00:00:00Z', definition: 'Creates a sharp emotional peak' },
+  { id: 't-19', name: 'Deliberate Delay', category: 'framework', group: 'Retention', color: '#8b5cf6', usageCount: 7, createdAt: '2025-01-01T00:00:00Z', definition: 'Intentionally slows reveal to build tension' },
+  { id: 't-20', name: 'Mid Video Superhook', category: 'framework', group: 'Retention', color: '#8b5cf6', usageCount: 6, createdAt: '2025-01-01T00:00:00Z', definition: 'Second attention grab placed at 40–60% through the video' },
+  { id: 't-21', name: 'Specificity Anchor', category: 'framework', group: 'Trust', color: '#8b5cf6', usageCount: 11, createdAt: '2025-01-01T00:00:00Z', definition: 'Precise numbers or ratios that make claims more believable' },
+  { id: 't-22', name: 'Contrarian Opinion', category: 'framework', group: 'Hook', color: '#8b5cf6', usageCount: 9, createdAt: '2025-01-01T00:00:00Z', definition: 'Challenges the common belief held by the audience' },
+  { id: 't-23', name: 'Visual Hook', category: 'framework', group: 'Hook', color: '#8b5cf6', usageCount: 11, createdAt: '2025-01-01T00:00:00Z', definition: 'Stops scroll purely through visual stimulus — a stunning pour, dramatic reveal' },
+  { id: 't-24', name: 'Realistic Timeline', category: 'framework', group: 'Trust', color: '#8b5cf6', usageCount: 5, createdAt: '2025-01-01T00:00:00Z', definition: 'Sets achievable expectations to build trust' },
+];
+
+export const SEED_SEGMENTS: Segment[] = [
+  // vid-1 "Perfect Old Fashioned"
+  { id: 's-1', videoId: 'vid-1', start: 0, end: 3, label: 'Visual hook', notes: 'Camera pulls back from finished cocktail — no words, just the glass', layerType: 'descriptive', tags: ['Hook', 'Pour Shot'], color: '#3b82f6' },
+  { id: 's-2', videoId: 'vid-1', start: 0, end: 4, label: 'Curiosity loop open', notes: '"Most people get this wrong" — viewer must keep watching to learn the secret', layerType: 'framework', tags: ['Curiosity Loop', 'Identity Loop'], color: '#8b5cf6' },
+  { id: 's-3', videoId: 'vid-1', start: 3, end: 14, label: 'Ingredient breakdown', notes: 'Close-ups of whisky, bitters, sugar cube — text overlay labels each one', layerType: 'descriptive', tags: ['B-Roll', 'Text Overlay', 'Bottle Feature'], color: '#3b82f6' },
+  { id: 's-4', videoId: 'vid-1', start: 14, end: 30, label: 'Technique demo', notes: 'Muddling, correct stirring method — no shaking explained', layerType: 'descriptive', tags: ['Technique Demo', 'Talking Head'], color: '#10b981' },
+  { id: 's-5', videoId: 'vid-1', start: 14, end: 24, label: 'Contrarian teaching', notes: 'Challenges "shaken cocktail" assumption directly', layerType: 'framework', tags: ['Contrarian Opinion', 'Pattern Interrupt'], color: '#8b5cf6' },
+  { id: 's-6', videoId: 'vid-1', start: 30, end: 41, label: 'Pour shot sequence', notes: 'Slow-motion whisky over ice sphere, orange peel twist — high visual payoff', layerType: 'descriptive', tags: ['Pour Shot', 'B-Roll', 'Visual Hook'], color: '#ec4899' },
+  { id: 's-7', videoId: 'vid-1', start: 41, end: 44, label: 'Taste reaction', notes: 'Genuine reaction to first sip — creates emotional connection', layerType: 'descriptive', tags: ['Taste Reaction', 'Emotion Spike'], color: '#f59e0b' },
+  { id: 's-8', videoId: 'vid-1', start: 44, end: 45, label: 'CTA', notes: 'Follow for weekly cocktail breakdowns', layerType: 'descriptive', tags: ['CTA'], color: '#ef4444' },
+
+  // vid-2 "Flat Cocktails"
+  { id: 's-9', videoId: 'vid-2', start: 0, end: 3, label: 'Contrarian hook', notes: '"Stop using your shaker wrong" — challenges standard bartending assumption', layerType: 'descriptive', tags: ['Hook', 'Contrarian Opinion'], color: '#3b82f6' },
+  { id: 's-10', videoId: 'vid-2', start: 0, end: 5, label: 'Big promise', notes: 'Promises the fix will instantly improve taste — viewer stays for solution', layerType: 'framework', tags: ['Big Promise', 'Pattern Interrupt'], color: '#8b5cf6' },
+  { id: 's-11', videoId: 'vid-2', start: 3, end: 16, label: 'Problem explanation', notes: 'Over-dilution and over-shaking shown with side-by-side pours', layerType: 'descriptive', tags: ['Technique Demo', 'B-Roll', 'Text Overlay'], color: '#3b82f6' },
+  { id: 's-12', videoId: 'vid-2', start: 16, end: 28, label: 'The fix', notes: 'Correct shaking timing, ice choice, and dilution control', layerType: 'descriptive', tags: ['Technique Demo', 'Talking Head'], color: '#10b981' },
+  { id: 's-13', videoId: 'vid-2', start: 16, end: 26, label: 'Specificity anchor', notes: '"12 seconds, 10 shakes" — exact numbers make the advice sticky', layerType: 'framework', tags: ['Specificity Anchor', 'Realistic Timeline'], color: '#8b5cf6' },
+  { id: 's-14', videoId: 'vid-2', start: 28, end: 35, label: 'Before / after pour', notes: 'Cloudy over-shaken vs clear properly-shaken — visual proof', layerType: 'descriptive', tags: ['Pour Shot', 'B-Roll', 'Taste Reaction'], color: '#ec4899' },
+  { id: 's-15', videoId: 'vid-2', start: 35, end: 38, label: 'CTA', notes: 'Save this so you never forget', layerType: 'descriptive', tags: ['CTA'], color: '#ef4444' },
+
+  // vid-3 "50 Negroni Ratios"
+  { id: 's-16', videoId: 'vid-3', start: 0, end: 3, label: 'Big promise hook', notes: '"50 cocktails, 3 months, one answer" — high specificity earns attention', layerType: 'descriptive', tags: ['Hook', 'Big Promise', 'Specificity Anchor'], color: '#3b82f6' },
+  { id: 's-17', videoId: 'vid-3', start: 0, end: 5, label: 'Curiosity loop', notes: 'Deliberately withholds winning ratio — viewer must stay to find out', layerType: 'framework', tags: ['Curiosity Loop', 'Deliberate Delay'], color: '#8b5cf6' },
+  { id: 's-18', videoId: 'vid-3', start: 3, end: 22, label: 'The experiment', notes: 'Montage of all 50 attempts — fast cuts, each ratio shown as text overlay', layerType: 'descriptive', tags: ['Montage', 'B-Roll', 'Text Overlay'], color: '#10b981' },
+  { id: 's-19', videoId: 'vid-3', start: 22, end: 26, label: 'Mid video superhook', notes: '"OK but here\'s where it gets interesting" — re-engages at 42% mark', layerType: 'framework', tags: ['Mid Video Superhook', 'Pattern Interrupt'], color: '#8b5cf6' },
+  { id: 's-20', videoId: 'vid-3', start: 26, end: 40, label: 'Taste test reactions', notes: 'Reacting to shortlisted ratios — genuine wins and losses shown', layerType: 'descriptive', tags: ['Taste Reaction', 'Talking Head', 'Emotion Spike'], color: '#f59e0b' },
+  { id: 's-21', videoId: 'vid-3', start: 40, end: 49, label: 'Winner reveal', notes: 'Exact ratio revealed with pour — "1:1:1 is the lie, here\'s what actually works"', layerType: 'descriptive', tags: ['Pour Shot', 'Specificity Anchor', 'Contrarian Opinion'], color: '#ec4899' },
+  { id: 's-22', videoId: 'vid-3', start: 49, end: 52, label: 'CTA + tease', notes: 'Follow + tease of the next spirit breakdown', layerType: 'descriptive', tags: ['CTA', 'Curiosity Loop'], color: '#ef4444' },
+
+  // vid-4 "Whisky Neat vs Ice"
+  { id: 's-23', videoId: 'vid-4', start: 0, end: 2, label: 'Visual hook', notes: 'Two identical glasses side by side — no text, just the visual contrast', layerType: 'descriptive', tags: ['Hook', 'Visual Hook', 'Silent Pause'], color: '#3b82f6' },
+  { id: 's-24', videoId: 'vid-4', start: 0, end: 4, label: 'Contrarian open', notes: '"The right answer isn\'t what the whisky snobs tell you" — calls out existing tribe', layerType: 'framework', tags: ['Contrarian Opinion', 'Identity Loop'], color: '#8b5cf6' },
+  { id: 's-25', videoId: 'vid-4', start: 4, end: 18, label: 'Science explanation', notes: 'Temperature effect on esters, dilution opening up compounds — simplified', layerType: 'descriptive', tags: ['Talking Head', 'Text Overlay', 'B-Roll'], color: '#3b82f6' },
+  { id: 's-26', videoId: 'vid-4', start: 18, end: 28, label: 'Side-by-side taste test', notes: 'Live tasting both — reactions are genuine, no script', layerType: 'descriptive', tags: ['Taste Reaction', 'Binary Choice', 'Emotion Spike'], color: '#f59e0b' },
+  { id: 's-27', videoId: 'vid-4', start: 28, end: 32, label: 'The answer', notes: '"It depends on the whisky, not the rule" — nuanced take that sparks comments', layerType: 'descriptive', tags: ['Talking Head', 'Specificity Anchor'], color: '#3b82f6' },
+  { id: 's-28', videoId: 'vid-4', start: 32, end: 34, label: 'CTA', notes: 'Comment your take — drives engagement spike', layerType: 'descriptive', tags: ['CTA', 'Binary Choice'], color: '#ef4444' },
+
+  // vid-5 "Bar Hacks"
+  { id: 's-29', videoId: 'vid-5', start: 0, end: 3, label: 'Rapid-fire hook', notes: 'Quick-cut montage of all three hacks in 3 seconds — visual overload that stops scroll', layerType: 'descriptive', tags: ['Hook', 'Montage', 'Visual Hook'], color: '#3b82f6' },
+  { id: 's-30', videoId: 'vid-5', start: 0, end: 5, label: 'Big promise', notes: '"These three things changed how I work behind the bar"', layerType: 'framework', tags: ['Big Promise', 'Identity Loop'], color: '#8b5cf6' },
+  { id: 's-31', videoId: 'vid-5', start: 5, end: 22, label: 'Hack 1 — citrus twist', notes: 'Channel knife technique for perfect twist, expressed oils shown close-up', layerType: 'descriptive', tags: ['Technique Demo', 'Pour Shot', 'Text Overlay'], color: '#10b981' },
+  { id: 's-32', videoId: 'vid-5', start: 22, end: 40, label: 'Hack 2 — glass chilling', notes: 'Batch-chill method without freezer — immediately practical for home bars', layerType: 'descriptive', tags: ['Technique Demo', 'B-Roll', 'Specificity Anchor'], color: '#10b981' },
+  { id: 's-33', videoId: 'vid-5', start: 30, end: 38, label: 'Mid video superhook', notes: '"This one will feel like cheating" — re-engages at 50% mark before hack 3', layerType: 'framework', tags: ['Mid Video Superhook', 'Deliberate Delay'], color: '#8b5cf6' },
+  { id: 's-34', videoId: 'vid-5', start: 40, end: 56, label: 'Hack 3 — dilution control', notes: 'Turbocharged stirring ice explained — most advanced hack saved for last', layerType: 'descriptive', tags: ['Technique Demo', 'Talking Head', 'Bottle Feature'], color: '#10b981' },
+  { id: 's-35', videoId: 'vid-5', start: 56, end: 60, label: 'CTA', notes: 'Save + follow for the full bar setup guide', layerType: 'descriptive', tags: ['CTA', 'Curiosity Loop'], color: '#ef4444' },
+];
+
+export const SEED_INSIGHTS: Insight[] = [
+  {
+    id: 'ins-1',
+    title: 'Pour Shot + Taste Reaction = highest save rate',
+    summary: 'Videos containing both a Pour Shot and Taste Reaction segment average 68K saves — 2.3× above your account average of 30K. The visual payoff of the pour combined with an authentic reaction creates an irresistible save trigger.',
+    relatedTags: ['Pour Shot', 'Taste Reaction'],
+    relatedVideos: ['vid-1', 'vid-2', 'vid-4'],
+    score: 94,
+    createdAt: '2025-03-20T00:00:00Z',
+    type: 'performance',
+    icon: '🍸',
+  },
+  {
+    id: 'ins-2',
+    title: 'Contrarian Opinion hooks drive 2.1× more comments',
+    summary: 'Your three videos that open with Contrarian Opinion framework tags average 8,467 comments vs 3,150 for non-contrarian openers. "Whisky Neat vs Ice" (14.1K comments) is your highest-engagement video by this metric.',
+    relatedTags: ['Contrarian Opinion', 'Hook'],
+    relatedVideos: ['vid-1', 'vid-2', 'vid-4'],
+    score: 91,
+    createdAt: '2025-03-20T00:00:00Z',
+    type: 'pattern',
+    icon: '🔥',
+  },
+  {
+    id: 'ins-3',
+    title: 'Short reels (under 40s) retain 11% better than longer cuts',
+    summary: 'Your sub-40s videos (vid-2 at 38s, vid-4 at 34s) average 90.5% retention vs 75.7% for longer videos. For alcohol content, the "one insight, one payoff" format consistently outperforms the comprehensive breakdown format.',
+    relatedTags: ['Hook', 'CTA'],
+    relatedVideos: ['vid-2', 'vid-4'],
+    score: 87,
+    createdAt: '2025-03-20T00:00:00Z',
+    type: 'comparison',
+    icon: '⏱️',
+  },
+  {
+    id: 'ins-4',
+    title: 'Specificity Anchor in first 5s doubles follows per view',
+    summary: 'Videos that use precise numbers or ratios in the opening 5 seconds (e.g. "50 ratios", "12 seconds, 10 shakes") average 0.022 follows/view vs 0.011 for open-ended hooks. Specificity builds credibility before the viewer has reason to trust you.',
+    relatedTags: ['Specificity Anchor', 'Big Promise'],
+    relatedVideos: ['vid-2', 'vid-3'],
+    score: 85,
+    createdAt: '2025-03-20T00:00:00Z',
+    type: 'recommendation',
+    icon: '🎯',
+  },
+  {
+    id: 'ins-5',
+    title: 'Mid Video Superhook at 40–50% mark saves watch time',
+    summary: 'Videos with a Mid Video Superhook tag between 40–55% duration show 8% longer average watch time. Your bar hacks video uses this at 30s/60s (50%) — compare its 77% retention against the 71% of your Negroni video which lacks a mid re-hook.',
+    relatedTags: ['Mid Video Superhook', 'Deliberate Delay'],
+    relatedVideos: ['vid-3', 'vid-5'],
+    score: 79,
+    createdAt: '2025-03-20T00:00:00Z',
+    type: 'performance',
+    icon: '⚡',
+  },
+];
