@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Zap, Mail, Lock, Globe, AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -7,7 +7,8 @@ import { createClient } from '@/lib/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import { cn } from '@/lib/utils';
 
-export default function LoginPage() {
+// Inner component uses useSearchParams — must be inside <Suspense>
+function LoginForm() {
   const router     = useRouter();
   const params     = useSearchParams();
   const supabase   = createClient();
@@ -159,5 +160,15 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// Outer page wraps LoginForm in Suspense — required by Next.js App Router
+// when useSearchParams() is used inside a page component.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0d0d0f]" />}>
+      <LoginForm />
+    </Suspense>
   );
 }
