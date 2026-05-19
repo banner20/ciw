@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, Bookmark, Link2, Tag, ChevronDown } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { Platform, SwipeItem } from '@/types';
 
 const PLATFORMS: Platform[] = ['instagram', 'tiktok', 'youtube', 'twitter', 'linkedin', 'other'];
@@ -74,6 +75,7 @@ export default function QuickCapture() {
       savedAt:   new Date().toISOString(),
     };
     addSwipeItem(item);
+    toast.success('Saved to swipe file', { description: title.trim() });
     handleClose();
   }
 
