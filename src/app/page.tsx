@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import QuickCapture from '@/components/QuickCapture';
 import OnboardingOverlay from '@/components/OnboardingOverlay';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // Intelligence
 import LibraryView    from '@/components/views/LibraryView';
@@ -94,6 +95,9 @@ export default function Home() {
       return () => clearTimeout(timeout);
     }
   }, [isSaved, markSaved]);
+
+  // Register global keyboard shortcuts
+  useKeyboardShortcuts();
 
   const ActiveView = VIEW_COMPONENTS[activeView];
   const isNewUser  = !isLoading && videos.length === 0 && ideas.length === 0;

@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useStore } from '@/store/useStore';
 import { Plus, GripVertical, Trash2, Check, X, MoreHorizontal, ChevronRight, Globe, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { Idea, IdeaColumn, IdeaStatus, Platform } from '@/types';
 import IdeaDetailPanel from '@/components/IdeaDetailPanel';
 
@@ -267,6 +268,68 @@ function ColumnHeader({ col, colCount, onRename, onRecolor, onDelete }: ColumnHe
   );
 }
 
+// ── Inline quick-add ─────────────────────────────────────────────────────────
+
+function InlineAdd({ colId, colColor, onDone }: { colId: string; colColor: string; onDone: () => void }) {
+  const { addIdea, activeProjectId } = useStore();
+  const [title, setTitle] = useState('');
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  function submit() {
+    const t = title.trim();
+    if (!t) { onDone(); return; }
+    addIdea({
+      id:        `idea-${Date.now()}`,
+      projectId: activeProjectId ?? 'proj-1',
+      title:     t,
+      hook:      '',
+      body:      '',
+      status:    colId,
+      platform:  'instagram',
+      tags:      [],
+      createdAt: new Date().toISOString(),
+    });
+    toast.success('Idea added');
+    setTitle('');
+    ref.current?.focus();
+  }
+
+  return (
+    <div className="mx-1 mt-2 space-y-1.5">
+      <textarea
+        ref={ref}
+        autoFocus
+        rows={2}
+        value={title}
+        placeholder="Idea title…"
+        onChange={e => setTitle(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+          if (e.key === 'Escape') onDone();
+        }}
+        className="w-full bg-white/[0.06] border border-white/[0.12] rounded-xl px-3 py-2
+                   text-xs text-white placeholder:text-zinc-600 outline-none resize-none
+                   focus:border-violet-500/40 transition-colors leading-relaxed"
+      />
+      <div className="flex gap-1.5">
+        <button
+          onClick={submit}
+          disabled={!title.trim()}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                     text-white transition-colors disabled:opacity-40"
+          style={{ backgroundColor: colColor }}
+        >
+          <Check className="w-3 h-3" />
+          Add
+        </button>
+        <button onClick={onDone} className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 transition-colors">
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Column drop zone ──────────────────────────────────────────────────────────
 
 interface ColumnProps {
@@ -276,7 +339,6 @@ interface ColumnProps {
   colCount:         number;
   isDragOver:       boolean;
   isColDragOver:    boolean;
-  onAddIdea:        () => void;
   onOpenIdea:       (id: string) => void;
   onRename:         (id: string, label: string) => void;
   onRecolor:        (id: string, color: string) => void;
@@ -293,11 +355,13 @@ interface ColumnProps {
 function Column({
   col, columns, ideas, colCount,
   isDragOver, isColDragOver,
-  onAddIdea, onOpenIdea, onRename, onRecolor, onDeleteCol,
+  onOpenIdea, onRename, onRecolor, onDeleteCol,
   onIdeaDragStart, onIdeaDragEnd,
   onColDragStart, onColDragEnd,
   onDragOver, onDrop, onDragLeave,
 }: ColumnProps) {
+  const [adding, setAdding] = useState(false);
+
   return (
     <div
       className="flex flex-col w-[230px] flex-shrink-0"
@@ -355,19 +419,21 @@ function Column({
         )}
       </div>
 
-      {/* Add idea button */}
-      <button
-        onClick={onAddIdea}
-        className="mt-2 mx-1 flex items-center gap-1.5 py-2 rounded-xl border border-dashed
-                   border-white/[0.07] hover:border-opacity-50 text-zinc-600 text-xs
-                   transition-colors group/add"
-        style={{ '--hover-color': col.color } as React.CSSProperties}
-        onMouseEnter={e => (e.currentTarget.style.borderColor = hexToRgba(col.color, 0.4))}
-        onMouseLeave={e => (e.currentTarget.style.borderColor = '')}
-      >
-        <Plus className="w-3.5 h-3.5 ml-3 transition-colors group-hover/add:text-white" />
-        <span className="group-hover/add:text-white transition-colors">Add idea</span>
-      </button>
+      {/* Inline add */}
+      {adding ? (
+        <InlineAdd colId={col.id} colColor={col.color} onDone={() => setAdding(false)} />
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="mt-2 mx-1 flex items-center gap-1.5 py-2 rounded-xl border border-dashed
+                     border-white/[0.07] text-zinc-600 text-xs transition-all group/add"
+          onMouseEnter={e => (e.currentTarget.style.borderColor = hexToRgba(col.color, 0.4))}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = '')}
+        >
+          <Plus className="w-3.5 h-3.5 ml-3 group-hover/add:text-white transition-colors" />
+          <span className="group-hover/add:text-white transition-colors">Add idea</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -585,7 +651,6 @@ export default function IdeasBoardView() {
               colCount={ideaColumns.length}
               isDragOver={dragOverColId === col.id}
               isColDragOver={dragColOver === col.id}
-              onAddIdea={() => setAddingTo(col.id)}
               onOpenIdea={setOpenIdeaId}
               onRename={renameColumn}
               onRecolor={recolorColumn}

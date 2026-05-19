@@ -209,7 +209,7 @@ export default function InsightsView() {
     setIsGenerating(true);
     setTimeout(() => {
       const generated = generateInsightsFromData(
-        videos.map(v => ({ id: v.id, title: v.title, metrics: v.metrics, language: v.language })),
+        videos.map(v => ({ id: v.id, title: v.title, metrics: v.metrics, language: v.language, platform: v.platform, duration: v.duration, createdAt: v.createdAt })),
         segments.map(s => ({ videoId: s.videoId, tags: s.tags, start: s.start, end: s.end }))
       );
       const newInsights = generated.map((ins, i) => ({

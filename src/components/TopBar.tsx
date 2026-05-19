@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { Workspace } from '@/types';
+import ShortcutsHelp from '@/components/ShortcutsHelp';
 
 const VIEW_LABELS: Record<string, string> = {
   // intelligence
@@ -129,6 +130,9 @@ export default function TopBar() {
           <Database className="w-3.5 h-3.5" />
           Sample data
         </Button>
+
+        {/* Keyboard shortcuts */}
+        <ShortcutsHelp />
 
         {/* Sign out */}
         <Button
