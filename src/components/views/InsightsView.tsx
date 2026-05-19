@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, RefreshCw, TrendingUp, BarChart2, ArrowRight, Zap, LineChart as LineChartIcon } from 'lucide-react';
 import {
@@ -205,6 +205,12 @@ export default function InsightsView() {
   const { videos, segments, insights, setInsights } = useStore();
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Auto-generate on first visit if there's data but no insights yet
+  useEffect(() => {
+    if (videos.length > 0 && insights.length === 0) generateInsights();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function generateInsights() {
     setIsGenerating(true);
     setTimeout(() => {
@@ -218,7 +224,7 @@ export default function InsightsView() {
         createdAt: new Date().toISOString(),
         type: ins.type as Insight['type'],
       }));
-      setInsights([...insights, ...newInsights]);
+      setInsights(newInsights);
       setIsGenerating(false);
     }, 1200);
   }
