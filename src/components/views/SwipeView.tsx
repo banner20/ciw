@@ -4,10 +4,165 @@ import { useStore } from '@/store/useStore';
 import {
   Plus, Bookmark, ExternalLink, Trash2, Search, Link2,
   Edit3, X, Check, Lightbulb, Image as ImageIcon, LayoutGrid, List,
+  Play, BookMarked, Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { SwipeItem, Platform, Idea } from '@/types';
+
+// ── Embed helpers ─────────────────────────────────────────────────────────────
+
+function getInstagramEmbedUrl(url: string): string | null {
+  // Matches /p/, /reel/, /tv/ shortcodes
+  const m = url.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/);
+  if (!m) return null;
+  return `https://www.instagram.com/p/${m[1]}/embed/`;
+}
+
+function isInstagram(url?: string) {
+  return !!url && url.includes('instagram.com');
+}
+
+// ── Embed preview modal ───────────────────────────────────────────────────────
+
+function EmbedPreviewModal({ item, onClose }: { item: SwipeItem; onClose: () => void }) {
+  const embedUrl = item.url ? getInstagramEmbedUrl(item.url) : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-[#18181c] border border-white/10 rounded-2xl overflow-hidden shadow-2xl w-[420px] max-h-[85vh] flex flex-col"
+           onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] shrink-0">
+          <Play className="w-4 h-4 text-pink-400" />
+          <span className="text-sm font-semibold text-white flex-1 truncate">{item.title}</span>
+          {item.url && (
+            <a href={item.url} target="_blank" rel="noopener noreferrer"
+               className="text-zinc-600 hover:text-zinc-300 transition-colors mr-1">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Embed */}
+        <div className="flex-1 overflow-y-auto bg-black/30 flex items-start justify-center p-4">
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="w-full rounded-xl border border-white/10"
+              style={{ minHeight: 560, maxHeight: 700 }}
+              frameBorder="0"
+              scrolling="no"
+              allowTransparency
+              allow="encrypted-media"
+              title="Instagram embed"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <ExternalLink className="w-8 h-8 text-zinc-600" />
+              <p className="text-sm text-zinc-500">Can&apos;t embed this URL</p>
+              {item.url && (
+                <a href={item.url} target="_blank" rel="noopener noreferrer"
+                   className="text-xs text-violet-400 hover:text-violet-300 underline transition-colors">
+                  Open in new tab →
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Notes */}
+        {item.notes && (
+          <div className="px-4 py-3 border-t border-white/[0.06] shrink-0">
+            <p className="text-xs text-zinc-500 leading-relaxed">{item.notes}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Bookmarklet modal ─────────────────────────────────────────────────────────
+
+function BookmarkletModal({ onClose }: { onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
+  // Minified bookmarklet code
+  const bookmarklet = `javascript:(function(){var u=encodeURIComponent(location.href);var t=encodeURIComponent(document.title);window.open('${origin}/capture?url='+u+'&title='+t,'smtool','width=440,height=640,left='+(screen.width/2-220)+',top='+(screen.height/2-320))})()`;
+
+  function copyCode() {
+    navigator.clipboard.writeText(bookmarklet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-[#18181c] border border-white/10 rounded-2xl p-5 w-[440px] shadow-2xl space-y-4"
+           onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BookMarked className="w-4 h-4 text-violet-400" />
+            <span className="text-sm font-semibold text-white">Browser Bookmarklet</span>
+          </div>
+          <button onClick={onClose} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-xs text-zinc-500 leading-relaxed">
+          Drag the button below to your bookmarks bar. Then click it on any page — Instagram, TikTok, anywhere — to instantly save it to your swipe file.
+        </p>
+
+        {/* Draggable bookmarklet link */}
+        <div className="flex items-center gap-3 p-3 bg-white/[0.04] border border-white/[0.08] rounded-xl">
+          <a
+            href={bookmarklet}
+            onClick={e => e.preventDefault()}
+            draggable
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-colors cursor-grab active:cursor-grabbing select-none shrink-0"
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            Save to SM Tool
+          </a>
+          <p className="text-[11px] text-zinc-600 leading-snug flex-1">← Drag this to your bookmarks bar</p>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-2">
+          {[
+            'Drag the button above to your browser\'s bookmarks bar',
+            'Go to any Instagram, TikTok, or YouTube page',
+            'Click "Save to SM Tool" in your bookmarks bar',
+            'A mini window opens — fill in details and save',
+          ].map((step, i) => (
+            <div key={i} className="flex items-start gap-2.5">
+              <span className="w-4 h-4 rounded-full bg-violet-500/20 text-violet-400 text-[10px] font-bold flex items-center justify-center shrink-0 mt-px">
+                {i + 1}
+              </span>
+              <p className="text-xs text-zinc-500">{step}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Copy fallback */}
+        <div className="pt-1 border-t border-white/[0.06]">
+          <p className="text-[11px] text-zinc-700 mb-2">Can&apos;t drag? Copy the code manually:</p>
+          <button onClick={copyCode}
+            className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+            <Copy className="w-3 h-3" />
+            {copied ? 'Copied!' : 'Copy bookmarklet code'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -167,10 +322,11 @@ function LinkIdeaModal({ item, onClose }: { item: SwipeItem; onClose: () => void
 
 // ── Grid card ─────────────────────────────────────────────────────────────────
 
-function GridCard({ item, onEdit, onLink }: { item: SwipeItem; onEdit: () => void; onLink: () => void }) {
+function GridCard({ item, onEdit, onLink, onPreview }: { item: SwipeItem; onEdit: () => void; onLink: () => void; onPreview: () => void }) {
   const { deleteSwipeItem } = useStore();
   const og = useOG(item.url);
   const platformStyle = item.platform ? PLATFORM_STYLES[item.platform] : null;
+  const canEmbed = isInstagram(item.url);
 
   return (
     <div className="bg-[#15151a] border border-white/[0.07] rounded-2xl overflow-hidden group hover:border-white/[0.14] hover:shadow-lg hover:shadow-black/30 transition-all flex flex-col">
@@ -187,6 +343,12 @@ function GridCard({ item, onEdit, onLink }: { item: SwipeItem; onEdit: () => voi
           )}
           {/* Overlay actions */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            {canEmbed && (
+              <button onClick={onPreview}
+                className="w-8 h-8 rounded-full bg-pink-500/30 backdrop-blur-sm border border-pink-500/40 flex items-center justify-center hover:bg-pink-500/50 transition-colors">
+                <Play className="w-3.5 h-3.5 text-white" />
+              </button>
+            )}
             <a href={item.url} target="_blank" rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
               <ExternalLink className="w-3.5 h-3.5 text-white" />
@@ -262,10 +424,11 @@ function GridCard({ item, onEdit, onLink }: { item: SwipeItem; onEdit: () => voi
 
 // ── List row ──────────────────────────────────────────────────────────────────
 
-function ListRow({ item, onEdit, onLink }: { item: SwipeItem; onEdit: () => void; onLink: () => void }) {
+function ListRow({ item, onEdit, onLink, onPreview }: { item: SwipeItem; onEdit: () => void; onLink: () => void; onPreview: () => void }) {
   const { deleteSwipeItem } = useStore();
   const og = useOG(item.url);
   const platformStyle = item.platform ? PLATFORM_STYLES[item.platform] : null;
+  const canEmbed = isInstagram(item.url);
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#15151a] border border-white/[0.07] group hover:border-white/[0.12] transition-all">
@@ -308,6 +471,12 @@ function ListRow({ item, onEdit, onLink }: { item: SwipeItem; onEdit: () => void
 
       {/* Actions */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        {canEmbed && (
+          <button onClick={onPreview}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:text-pink-400 hover:bg-white/[0.04] transition-colors">
+            <Play className="w-3.5 h-3.5" />
+          </button>
+        )}
         {item.url && (
           <a href={item.url} target="_blank" rel="noopener noreferrer"
             className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:text-blue-400 hover:bg-white/[0.04] transition-colors">
@@ -360,14 +529,16 @@ function TagFilterBar({ items, active, onToggle }: {
 
 export default function SwipeView() {
   const { swipeItems } = useStore();
-  const [showAdd,       setShowAdd]       = useState(false);
-  const [editItem,      setEditItem]      = useState<SwipeItem | null>(null);
-  const [linkItem,      setLinkItem]      = useState<SwipeItem | null>(null);
-  const [search,        setSearch]        = useState('');
-  const [platformFilter, setPlatformFilter] = useState<Platform | 'all'>('all');
-  const [activeTags,    setActiveTags]    = useState<Set<string>>(new Set());
-  const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid');
-  const [showTagBar,    setShowTagBar]    = useState(false);
+  const [showAdd,        setShowAdd]        = useState(false);
+  const [editItem,       setEditItem]       = useState<SwipeItem | null>(null);
+  const [linkItem,       setLinkItem]       = useState<SwipeItem | null>(null);
+  const [previewItem,    setPreviewItem]    = useState<SwipeItem | null>(null);
+  const [showBookmarklet, setShowBookmarklet] = useState(false);
+  const [search,         setSearch]         = useState('');
+  const [platformFilter,  setPlatformFilter]  = useState<Platform | 'all'>('all');
+  const [activeTags,     setActiveTags]     = useState<Set<string>>(new Set());
+  const [viewMode,       setViewMode]       = useState<'grid' | 'list'>('grid');
+  const [showTagBar,     setShowTagBar]     = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcut: / to focus search
@@ -426,6 +597,14 @@ export default function SwipeView() {
               <List className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          <button
+            onClick={() => setShowBookmarklet(true)}
+            title="Get browser bookmarklet"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.07] text-zinc-400 hover:text-white text-xs font-medium transition-colors">
+            <BookMarked className="w-3.5 h-3.5" />
+            Bookmarklet
+          </button>
 
           <button onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors">
@@ -509,7 +688,8 @@ export default function SwipeView() {
             {filtered.map(item => (
               <GridCard key={item.id} item={item}
                 onEdit={() => setEditItem(item)}
-                onLink={() => setLinkItem(item)} />
+                onLink={() => setLinkItem(item)}
+                onPreview={() => setPreviewItem(item)} />
             ))}
           </div>
         ) : (
@@ -517,16 +697,19 @@ export default function SwipeView() {
             {filtered.map(item => (
               <ListRow key={item.id} item={item}
                 onEdit={() => setEditItem(item)}
-                onLink={() => setLinkItem(item)} />
+                onLink={() => setLinkItem(item)}
+                onPreview={() => setPreviewItem(item)} />
             ))}
           </div>
         )}
       </div>
 
       {/* ── Modals ── */}
-      {showAdd    && <SwipeModal onClose={() => setShowAdd(false)} />}
-      {editItem   && <SwipeModal initial={editItem} onClose={() => setEditItem(null)} />}
-      {linkItem   && <LinkIdeaModal item={linkItem} onClose={() => setLinkItem(null)} />}
+      {showAdd        && <SwipeModal onClose={() => setShowAdd(false)} />}
+      {editItem       && <SwipeModal initial={editItem} onClose={() => setEditItem(null)} />}
+      {linkItem       && <LinkIdeaModal item={linkItem} onClose={() => setLinkItem(null)} />}
+      {previewItem    && <EmbedPreviewModal item={previewItem} onClose={() => setPreviewItem(null)} />}
+      {showBookmarklet && <BookmarkletModal onClose={() => setShowBookmarklet(false)} />}
     </div>
   );
 }

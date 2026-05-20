@@ -7,8 +7,14 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Creative Intelligence Workspace",
-  description: "Analyze short-form video content with precision",
+  title: "SM Tool — Creative Intelligence",
+  description: "Analyse short-form video content with precision",
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'apple-mobile-web-app-title': 'SM Tool',
+  },
 };
 
 export default function RootLayout({
@@ -18,6 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark h-full">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0d0d0f" />
+      </head>
       <body className={`${inter.className} h-full bg-[#0d0d0f] text-zinc-100 antialiased`}>
         <TooltipProvider>
           {children}

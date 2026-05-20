@@ -39,6 +39,29 @@ export default function QuickCapture() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Paste-to-capture: paste a URL anywhere outside an input → open pre-filled
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      if (isInput) return;
+      const text = e.clipboardData?.getData('text') ?? '';
+      if (/^https?:\/\//i.test(text.trim())) {
+        setUrl(text.trim());
+        // Auto-detect platform from URL
+        const lower = text.toLowerCase();
+        if (lower.includes('instagram.com')) setPlatform('instagram');
+        else if (lower.includes('tiktok.com')) setPlatform('tiktok');
+        else if (lower.includes('youtube.com') || lower.includes('youtu.be')) setPlatform('youtube');
+        else if (lower.includes('twitter.com') || lower.includes('x.com')) setPlatform('twitter');
+        else if (lower.includes('linkedin.com')) setPlatform('linkedin');
+        setOpen(true);
+      }
+    }
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, []);
+
   // Focus title when opened
   useEffect(() => {
     if (open) setTimeout(() => titleRef.current?.focus(), 80);
