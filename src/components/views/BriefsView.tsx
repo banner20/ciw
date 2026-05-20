@@ -1,13 +1,15 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '@/store/useStore';
 import {
   Plus, Trash2, Check, Flame, FileText, Film, Bookmark,
   ExternalLink, X, ChevronRight, Clock, Hash, Target,
   Square, Link2, ArrowRight, Search, BookOpen, Pencil,
+  Sparkles, ChevronDown, Copy, RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type {
   Idea, Platform, FormatType, IdeaTalkingPoint, IdeaChecklistItem, Script,
 } from '@/types';
@@ -669,8 +671,260 @@ function BriefListItem({
 
 // ── Brief editor ───────────────────────────────────────────────────────────────
 
+// ── AI Brief Panel ─────────────────────────────────────────────────────────────
+
+interface ParsedBrief {
+  hookAngle: string;
+  talkingPoints: string[];
+  bRollIdeas: string[];
+  ctaOptions: string[];
+  captionDraft: string;
+}
+
+function parseBrief(text: string): ParsedBrief {
+  function extract(header: string, nextHeader?: string): string {
+    const pattern = nextHeader
+      ? new RegExp(`${header}:\\n([\\s\\S]*?)(?=\\n${nextHeader}:|$)`, 'i')
+      : new RegExp(`${header}:\\n([\\s\\S]*)`, 'i');
+    return (text.match(pattern)?.[1] ?? '').trim();
+  }
+
+  const hookAngle    = extract('HOOK ANGLE',     'TALKING POINTS');
+  const tpRaw        = extract('TALKING POINTS', 'B-ROLL IDEAS');
+  const brollRaw     = extract('B-ROLL IDEAS',   'CTA OPTIONS');
+  const ctaRaw       = extract('CTA OPTIONS',    'CAPTION DRAFT');
+  const captionDraft = extract('CAPTION DRAFT');
+
+  const talkingPoints = tpRaw.split('\n').map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+  const bRollIdeas    = brollRaw.split('\n').map(l => l.replace(/^-\s*/, '').trim()).filter(Boolean);
+  const ctaOptions    = ctaRaw.split('\n').map(l => l.replace(/^-\s*/, '').trim()).filter(Boolean);
+
+  return { hookAngle, talkingPoints, bRollIdeas, ctaOptions, captionDraft };
+}
+
+function AiBriefPanel({ idea, onClose }: { idea: Idea; onClose: () => void }) {
+  const { updateIdea } = useStore();
+  const [streaming, setStreaming] = useState(false);
+  const [rawText,   setRawText]   = useState('');
+  const [done,      setDone]      = useState(false);
+
+  const parsed = done ? parseBrief(rawText) : null;
+
+  const generate = useCallback(async () => {
+    setStreaming(true);
+    setRawText('');
+    setDone(false);
+
+    const context: Record<string, string> = {
+      ideaTitle:     idea.title,
+      ideaHook:      idea.hook,
+      talkingPoints: (idea.talkingPoints ?? []).map(p => p.text).join(', '),
+      platform:      idea.platform ?? '',
+      format:        idea.formatType ?? '',
+    };
+
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'brief', context }),
+      });
+      if (!res.ok || !res.body) throw new Error('Stream failed');
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer    = '';
+
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+        setRawText(buffer);
+      }
+      setDone(true);
+    } catch {
+      toast.error('Brief generation failed');
+    } finally {
+      setStreaming(false);
+    }
+  }, [idea]);
+
+  // Auto-generate on mount
+  useEffect(() => { generate(); }, [generate]);
+
+  function applyHook() {
+    if (!parsed?.hookAngle) return;
+    updateIdea(idea.id, { hook: parsed.hookAngle });
+    toast.success('Hook applied');
+  }
+
+  function applyTalkingPoints() {
+    if (!parsed?.talkingPoints.length) return;
+    const points: IdeaTalkingPoint[] = parsed.talkingPoints.map((text, i) => ({
+      id: `tp-ai-${Date.now()}-${i}`,
+      text,
+    }));
+    updateIdea(idea.id, { talkingPoints: points });
+    toast.success(`${points.length} talking points applied`);
+  }
+
+  function applyCaption() {
+    if (!parsed?.captionDraft) return;
+    updateIdea(idea.id, { caption: parsed.captionDraft });
+    toast.success('Caption applied');
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      className="border border-violet-500/20 bg-violet-500/[0.05] rounded-2xl overflow-hidden"
+    >
+      {/* Panel header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-violet-500/10">
+        <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+        <span className="text-xs font-semibold text-violet-300 flex-1">AI Brief</span>
+        {done && (
+          <button onClick={generate} title="Regenerate"
+            className="text-zinc-600 hover:text-zinc-400 transition-colors mr-1">
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button onClick={onClose} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Streaming / result body */}
+      <div className="p-4 space-y-4">
+        {streaming && !rawText && (
+          <div className="flex items-center gap-2 py-4">
+            <div className="flex gap-1">
+              {[0,1,2].map(i => (
+                <span key={i} className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
+            </div>
+            <span className="text-xs text-zinc-500">Generating brief…</span>
+          </div>
+        )}
+
+        {streaming && rawText && (
+          <pre className="text-xs text-zinc-400 leading-relaxed whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
+            {rawText}
+          </pre>
+        )}
+
+        {done && parsed && (
+          <div className="space-y-4">
+            {/* Hook */}
+            {parsed.hookAngle && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-3 h-3 text-orange-400" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-orange-400">Hook angle</span>
+                  <button onClick={applyHook}
+                    className="ml-auto text-[10px] text-violet-400 hover:text-violet-300 transition-colors px-2 py-0.5 rounded border border-violet-500/20 hover:border-violet-500/40">
+                    Apply →
+                  </button>
+                </div>
+                <p className="text-sm text-zinc-200 leading-relaxed bg-white/[0.03] rounded-xl px-3 py-2.5">
+                  {parsed.hookAngle}
+                </p>
+              </div>
+            )}
+
+            {/* Talking points */}
+            {parsed.talkingPoints.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Target className="w-3 h-3 text-violet-400" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-400">Talking points</span>
+                  <button onClick={applyTalkingPoints}
+                    className="ml-auto text-[10px] text-violet-400 hover:text-violet-300 transition-colors px-2 py-0.5 rounded border border-violet-500/20 hover:border-violet-500/40">
+                    Apply all →
+                  </button>
+                </div>
+                <div className="bg-white/[0.03] rounded-xl px-3 py-2 space-y-1.5">
+                  {parsed.talkingPoints.map((p, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-violet-500/15 text-violet-400 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm text-zinc-300">{p}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* B-roll */}
+            {parsed.bRollIdeas.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Film className="w-3 h-3 text-blue-400" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400">B-Roll ideas</span>
+                </div>
+                <div className="bg-white/[0.03] rounded-xl px-3 py-2 space-y-1">
+                  {parsed.bRollIdeas.map((b, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-zinc-600 text-xs mt-0.5">—</span>
+                      <span className="text-sm text-zinc-400">{b}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CTAs */}
+            {parsed.ctaOptions.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-3 h-3 text-emerald-400" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">CTA options</span>
+                </div>
+                <div className="bg-white/[0.03] rounded-xl px-3 py-2 space-y-1">
+                  {parsed.ctaOptions.map((c, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-zinc-600 text-xs mt-0.5">—</span>
+                      <span className="text-sm text-zinc-400">{c}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Caption */}
+            {parsed.captionDraft && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-3 h-3 text-zinc-400" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Caption draft</span>
+                  <button onClick={applyCaption}
+                    className="ml-auto text-[10px] text-violet-400 hover:text-violet-300 transition-colors px-2 py-0.5 rounded border border-violet-500/20 hover:border-violet-500/40">
+                    Apply →
+                  </button>
+                  <button onClick={() => { navigator.clipboard.writeText(parsed.captionDraft); toast.success('Copied'); }}
+                    className="text-zinc-600 hover:text-zinc-400 transition-colors">
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+                <pre className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap bg-white/[0.03] rounded-xl px-3 py-2.5 font-sans">
+                  {parsed.captionDraft}
+                </pre>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 function BriefEditor({ idea }: { idea: Idea }) {
   const { updateIdea, ideaColumns } = useStore();
+  const [showAiPanel, setShowAiPanel] = useState(false);
 
   const platformColor = idea.platform ? PLATFORM_COLORS[idea.platform] : null;
   const col = ideaColumns.find(c => c.id === idea.status);
@@ -681,13 +935,27 @@ function BriefEditor({ idea }: { idea: Idea }) {
 
         {/* ── Header ── */}
         <div className="space-y-3">
-          <input
-            value={idea.title}
-            onChange={e => updateIdea(idea.id, { title: e.target.value })}
-            className="w-full text-xl font-bold text-white bg-transparent outline-none
-                       border-b border-white/[0.07] pb-2 placeholder:text-zinc-700"
-            placeholder="Brief title…"
-          />
+          <div className="flex items-start gap-3">
+            <input
+              value={idea.title}
+              onChange={e => updateIdea(idea.id, { title: e.target.value })}
+              className="flex-1 text-xl font-bold text-white bg-transparent outline-none
+                         border-b border-white/[0.07] pb-2 placeholder:text-zinc-700"
+              placeholder="Brief title…"
+            />
+            <button
+              onClick={() => setShowAiPanel(p => !p)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0',
+                showAiPanel
+                  ? 'bg-violet-600 text-white'
+                  : 'bg-violet-500/15 text-violet-400 hover:bg-violet-500/25 border border-violet-500/20'
+              )}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              AI Brief
+            </button>
+          </div>
 
           {/* Meta row */}
           <div className="flex flex-wrap items-center gap-2">
@@ -772,6 +1040,13 @@ function BriefEditor({ idea }: { idea: Idea }) {
             })}
           </div>
         </div>
+
+        {/* ── AI Brief Panel ── */}
+        <AnimatePresence>
+          {showAiPanel && (
+            <AiBriefPanel idea={idea} onClose={() => setShowAiPanel(false)} />
+          )}
+        </AnimatePresence>
 
         {/* ── Divider ── */}
         <div className="border-t border-white/[0.05]" />

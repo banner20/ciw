@@ -83,6 +83,38 @@ Generate 5 distinct hook variations for this video. Each should use a different 
 
 Output exactly 5 hooks, each on a new line, numbered 1-5. No other text.`;
 
+    case 'brief':
+      return `You are an expert short-form video producer. You write production briefs that are specific, actionable, and tailored to the platform.
+
+Video concept:
+${briefContext || 'No concept provided.'}
+
+Generate a complete production brief using EXACTLY these section headers in order:
+
+HOOK ANGLE:
+[One scroll-stopping opening line — make it punchy and specific to the concept]
+
+TALKING POINTS:
+1. [First key point to cover]
+2. [Second key point]
+3. [Third key point]
+4. [Fourth key point]
+5. [Fifth key point]
+
+B-ROLL IDEAS:
+- [Specific visual shot or footage idea]
+- [Another visual idea]
+- [Another visual idea]
+
+CTA OPTIONS:
+- [First call-to-action option]
+- [Second call-to-action option]
+
+CAPTION DRAFT:
+[A complete, ready-to-post caption under 180 words with line breaks. No hashtags — those are separate.]
+
+Output only these five sections with the exact headers shown. No preamble, no commentary.`;
+
     default:
       return `${systemPrompt}\n\n${briefContext}\n\nWrite a short script section for: ${sectionType}`;
   }
