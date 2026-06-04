@@ -138,6 +138,10 @@ export interface Idea {
   caption?: string;
   hashtags?: string[];
   createdAt: string;
+  // notion sync
+  notionPageId?: string;   // Notion page ID — set after first push
+  brand?: string;          // Brand name (maps to Notion Brand field)
+  notionSyncedAt?: string; // ISO timestamp of last successful sync
 }
 
 export interface ScriptSection {

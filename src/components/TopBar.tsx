@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { cn } from '@/lib/utils';
 import type { Workspace } from '@/types';
 import ShortcutsHelp from '@/components/ShortcutsHelp';
+import NotionSync from '@/components/NotionSync';
 
 const VIEW_LABELS: Record<string, string> = {
   // intelligence
@@ -130,6 +131,9 @@ export default function TopBar() {
           <Database className="w-3.5 h-3.5" />
           Sample data
         </Button>
+
+        {/* Notion sync */}
+        <NotionSync />
 
         {/* Keyboard shortcuts */}
         <ShortcutsHelp />

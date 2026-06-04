@@ -989,8 +989,34 @@ function BriefEditor({ idea }: { idea: Idea }) {
               </span>
             )}
 
+            {/* Notion sync badge */}
+            {idea.notionPageId ? (
+              <span className="flex items-center gap-1 px-2 py-1 rounded-full border border-zinc-700 bg-white/[0.03] text-[10px] text-zinc-600"
+                    title={`Synced ${idea.notionSyncedAt ? new Date(idea.notionSyncedAt).toLocaleString() : ''}`}>
+                <svg className="w-2.5 h-2.5" viewBox="0 0 100 100" fill="currentColor"><path d="M6.017 4.313l55.333-4.087c6.797-.583 8.543-.194 12.817 2.913l17.663 12.443c2.913 2.14 3.883 2.72 3.883 5.053v68.243c0 4.277-1.553 6.807-6.99 7.193L24.467 99.967c-4.08.193-6.023-.39-8.16-3.113L3.113 79.157C.973 76.25 0 73.923 0 71.013V11.613c0-4.666 1.747-6.99 6.017-6.7z" style={{fill:'transparent'}}/><path d="M61.35.227L6.017 4.313C1.747 4.623 0 6.947 0 11.613v60c0 2.91.973 5.237 3.113 8.143l13.193 17.697c2.137 2.723 4.08 3.307 8.16 3.113l68.26-4.013c5.437-.387 6.99-2.917 6.99-7.193V9.583c0-2.14-.777-2.917-3.3-4.67L74.167 3.14C69.893.033 68.147-.357 61.35.227zM25.293 19.497c-5.247.35-6.437.427-9.417-1.99L8.927 11.4c-.777-.78-.39-1.75 1.557-1.944l52.68-3.887c4.467-.39 6.797 1.167 8.543 2.527l9.123 6.61c.39.195 1.363 1.363.194 1.363l-54.433 3.303-.3.125zM19.71 88.873V31.870c0-2.527.777-3.693 3.107-3.887l59.71-3.5c2.137-.193 3.107.97 3.107 3.497v56.613c0 2.527-.973 4.277-3.883 4.47L23.4 92.567c-2.913.19-3.69-1.167-3.69-3.694z"/></svg>
+                Synced
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-zinc-800 text-[10px] text-zinc-700">
+                Not synced
+              </span>
+            )}
+
+            {/* Brand field (maps to Notion Brand) */}
+            {idea.brand && (
+              <span className="px-2.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-[11px] text-zinc-400">
+                🏷 {idea.brand}
+              </span>
+            )}
+
             {/* Inline selectors */}
             <div className="flex items-center gap-1.5 ml-auto">
+              <input
+                value={idea.brand ?? ''}
+                onChange={e => updateIdea(idea.id, { brand: e.target.value || undefined })}
+                placeholder="Brand —"
+                className="bg-transparent text-[11px] text-zinc-600 placeholder:text-zinc-700 outline-none w-20 hover:text-zinc-400 focus:text-zinc-300"
+              />
               <select
                 value={idea.platform ?? ''}
                 onChange={e => updateIdea(idea.id, { platform: (e.target.value as Platform) || undefined })}
