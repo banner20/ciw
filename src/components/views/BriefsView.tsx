@@ -1077,6 +1077,87 @@ function BriefEditor({ idea }: { idea: Idea }) {
         {/* ── Divider ── */}
         <div className="border-t border-white/[0.05]" />
 
+        {/* ── Strategy strip (new fields) ── */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Content pillar */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Pillar</span>
+            <select value={idea.contentPillar ?? ''} onChange={e => updateIdea(idea.id, { contentPillar: (e.target.value as import('@/types').ContentPillar) || undefined })}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-300 outline-none focus:border-violet-500/30">
+              <option value="">—</option>
+              {(['education','entertainment','inspiration','promotion','bts','other'] as const).map(p => (
+                <option key={p} value={p}>{p === 'bts' ? 'BTS' : p.charAt(0).toUpperCase() + p.slice(1)}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Target emotion */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Emotion</span>
+            <select value={idea.targetEmotion ?? ''} onChange={e => updateIdea(idea.id, { targetEmotion: (e.target.value as import('@/types').TargetEmotion) || undefined })}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-300 outline-none focus:border-violet-500/30">
+              <option value="">—</option>
+              {(['curiosity','humor','awe','fear','inspiration','outrage','nostalgia'] as const).map(e => (
+                <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Difficulty */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Effort</span>
+            <select value={idea.difficulty ?? ''} onChange={e => updateIdea(idea.id, { difficulty: (e.target.value as import('@/types').IdeaDifficulty) || undefined })}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-300 outline-none focus:border-violet-500/30">
+              <option value="">—</option>
+              <option value="quick">Quick (phone)</option>
+              <option value="standard">Standard</option>
+              <option value="production">Production</option>
+            </select>
+          </div>
+
+          {/* Estimated duration */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Est. Length</span>
+            <select value={idea.estimatedDuration?.toString() ?? ''} onChange={e => updateIdea(idea.id, { estimatedDuration: e.target.value ? parseInt(e.target.value) : undefined })}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-300 outline-none focus:border-violet-500/30">
+              <option value="">—</option>
+              <option value="15">15s</option>
+              <option value="30">30s</option>
+              <option value="45">45s</option>
+              <option value="60">60s</option>
+              <option value="90">90s</option>
+              <option value="120">2m</option>
+              <option value="180">3m</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Key message + target audience (2-col) */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Key message</span>
+            <input value={idea.keyMessage ?? ''} onChange={e => updateIdea(idea.id, { keyMessage: e.target.value || undefined })}
+              placeholder="The ONE thing they walk away with"
+              className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-700 outline-none focus:border-violet-500/30" />
+          </div>
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Target audience</span>
+            <input value={idea.targetAudience ?? ''} onChange={e => updateIdea(idea.id, { targetAudience: e.target.value || undefined })}
+              placeholder="e.g. Beginner bartenders, home entertainers"
+              className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-700 outline-none focus:border-violet-500/30" />
+          </div>
+        </div>
+
+        {/* Post deadline (separate from scheduled date) */}
+        {idea.postDeadline || true ? (
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 shrink-0">Post deadline</span>
+            <input type="date" value={idea.postDeadline ?? ''} onChange={e => updateIdea(idea.id, { postDeadline: e.target.value || undefined })}
+              className="bg-white/[0.03] border border-white/[0.07] rounded-lg px-2.5 py-1 text-xs text-zinc-400 outline-none focus:border-violet-500/30" />
+            <span className="text-[10px] text-zinc-700">(must-be-done-by, separate from scheduled post date)</span>
+          </div>
+        ) : null}
+
         {/* ── Hook ── */}
         <div className="space-y-2">
           <SectionLabel icon={Flame} label="Hook" color="text-orange-400" />

@@ -43,9 +43,12 @@ interface PanelProps {
 
 function TagPanel({ selection, duration, videoId, layer, anchorPct, trackContainerRef, onClose }: PanelProps) {
   const { addSegment, incrementTagUsage } = useStore();
-  const [tags, setTags]   = useState<string[]>([]);
-  const [label, setLabel] = useState('');
+  const [tags,          setTags]          = useState<string[]>([]);
+  const [label,         setLabel]         = useState('');
   const [selectedLayer, setSelectedLayer] = useState<LayerKey>(layer);
+  const [energyLevel,   setEnergyLevel]   = useState<'low'|'medium'|'high'|''>('');
+  const [dropOff,       setDropOff]       = useState(false);
+  const [brollType,     setBrollType]     = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
   const suggestions = suggestTagsForLayer(selectedLayer, selection.start, selection.end, duration);
   const dur = Math.round(selection.end - selection.start);
@@ -71,6 +74,9 @@ function TagPanel({ selection, duration, videoId, layer, anchorPct, trackContain
       layerType: selectedLayer,
       tags,
       color: LAYER_COLORS[selectedLayer],
+      ...(energyLevel ? { energyLevel: energyLevel as 'low'|'medium'|'high' } : {}),
+      ...(dropOff ? { dropOffMarker: true } : {}),
+      ...(brollType ? { brollType: brollType as import('@/types').BrollType } : {}),
     };
     addSegment(seg);
     tags.forEach(t => incrementTagUsage(t));
@@ -145,6 +151,42 @@ function TagPanel({ selection, duration, videoId, layer, anchorPct, trackContain
           <span className="text-[10px] text-amber-400/80">{selectedLayer} suggestions in dropdown</span>
         </div>
       )}
+
+      {/* ── Extended tracking (compact row) ── */}
+      <div className="mt-2.5 flex flex-wrap gap-1.5 items-center">
+        {/* Energy level */}
+        {(['low','medium','high'] as const).map(e => (
+          <button key={e} onClick={() => setEnergyLevel(energyLevel === e ? '' : e)}
+            className={cn('px-2 py-0.5 rounded-md text-[10px] font-medium border transition-all capitalize',
+              energyLevel === e
+                ? e === 'high'   ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                : e === 'medium' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                :                  'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                : 'border-white/[0.07] text-zinc-600 bg-white/[0.02] hover:text-zinc-400')}>
+            {e}
+          </button>
+        ))}
+        <div className="w-px h-3 bg-white/10" />
+        {/* B-roll type */}
+        {(['selfie','broll','screen','text-overlay'] as const).map(b => (
+          <button key={b} onClick={() => setBrollType(brollType === b ? '' : b)}
+            className={cn('px-2 py-0.5 rounded-md text-[10px] font-medium border transition-all',
+              brollType === b
+                ? 'bg-violet-500/20 text-violet-300 border-violet-500/30'
+                : 'border-white/[0.07] text-zinc-600 bg-white/[0.02] hover:text-zinc-400')}>
+            {b}
+          </button>
+        ))}
+        <div className="w-px h-3 bg-white/10" />
+        {/* Drop-off marker */}
+        <button onClick={() => setDropOff(d => !d)}
+          className={cn('px-2 py-0.5 rounded-md text-[10px] font-medium border transition-all',
+            dropOff
+              ? 'bg-red-500/20 text-red-300 border-red-500/30'
+              : 'border-white/[0.07] text-zinc-600 bg-white/[0.02] hover:text-red-400')}>
+          ↓ drop-off
+        </button>
+      </div>
 
       <Button
         onClick={save}

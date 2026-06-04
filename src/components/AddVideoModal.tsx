@@ -10,7 +10,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useStore } from '@/store/useStore';
-import { Video, Platform, Language, FormatType } from '@/types';
+import { Video, Platform, Language, FormatType, ContentPillar } from '@/types';
+import { ChevronDown } from 'lucide-react';
 import { hasSupabase, getSupabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +43,15 @@ const FORMATS: { value: FormatType; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
+const PILLARS: { value: ContentPillar; label: string; color: string }[] = [
+  { value: 'education',     label: 'Education',     color: 'text-blue-400 border-blue-500/25 bg-blue-500/10' },
+  { value: 'entertainment', label: 'Entertainment', color: 'text-pink-400 border-pink-500/25 bg-pink-500/10' },
+  { value: 'inspiration',   label: 'Inspiration',   color: 'text-amber-400 border-amber-500/25 bg-amber-500/10' },
+  { value: 'promotion',     label: 'Promotion',     color: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10' },
+  { value: 'bts',           label: 'Behind Scenes', color: 'text-violet-400 border-violet-500/25 bg-violet-500/10' },
+  { value: 'other',         label: 'Other',         color: 'text-zinc-400 border-zinc-500/25 bg-zinc-500/10' },
+];
+
 function formatDur(s: number) {
   const m = Math.floor(s / 60);
   return m ? `${m}m ${s % 60}s` : `${s}s`;
@@ -71,10 +81,19 @@ export default function AddVideoModal({ open, onClose, editVideo }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // details step
-  const [title, setTitle] = useState(editVideo?.title ?? '');
-  const [platform, setPlatform] = useState<Platform>(editVideo?.platform ?? 'instagram');
-  const [language, setLanguage] = useState<Language>(editVideo?.language ?? 'en');
+  const [title,      setTitle]      = useState(editVideo?.title ?? '');
+  const [platform,   setPlatform]   = useState<Platform>(editVideo?.platform ?? 'instagram');
+  const [language,   setLanguage]   = useState<Language>(editVideo?.language ?? 'en');
   const [formatType, setFormatType] = useState<FormatType>(editVideo?.formatType ?? 'reel');
+
+  // extended tracking fields
+  const [contentPillar,  setContentPillar]  = useState<ContentPillar | ''>(editVideo?.contentPillar ?? '');
+  const [postedAt,       setPostedAt]       = useState(editVideo?.postedAt ? editVideo.postedAt.slice(0,16) : '');
+  const [audioTrack,     setAudioTrack]     = useState(editVideo?.audioTrack ?? '');
+  const [series,         setSeries]         = useState(editVideo?.series ?? '');
+  const [isBrandDeal,    setIsBrandDeal]    = useState(editVideo?.isBrandDeal ?? false);
+  const [isCollab,       setIsCollab]       = useState(editVideo?.isCollab ?? false);
+  const [showAdvanced,   setShowAdvanced]   = useState(false);
 
   // submit
   const [isUploading, setIsUploading] = useState(false);
@@ -89,6 +108,13 @@ export default function AddVideoModal({ open, onClose, editVideo }: Props) {
       setPlatform(editVideo?.platform ?? 'instagram');
       setLanguage(editVideo?.language ?? 'en');
       setFormatType(editVideo?.formatType ?? 'reel');
+      setContentPillar(editVideo?.contentPillar ?? '');
+      setPostedAt(editVideo?.postedAt ? editVideo.postedAt.slice(0,16) : '');
+      setAudioTrack(editVideo?.audioTrack ?? '');
+      setSeries(editVideo?.series ?? '');
+      setIsBrandDeal(editVideo?.isBrandDeal ?? false);
+      setIsCollab(editVideo?.isCollab ?? false);
+      setShowAdvanced(false);
       setIsUploading(false);
     }
   }, [open, isEditing, editVideo]);
@@ -125,8 +151,17 @@ export default function AddVideoModal({ open, onClose, editVideo }: Props) {
   // ── save logic ───────────────────────────────────────────────────────────────
 
   async function save(andAnnotate: boolean) {
+    const extended = {
+      contentPillar:  (contentPillar as ContentPillar) || undefined,
+      postedAt:       postedAt ? new Date(postedAt).toISOString() : undefined,
+      audioTrack:     audioTrack.trim() || undefined,
+      series:         series.trim() || undefined,
+      isBrandDeal:    isBrandDeal || undefined,
+      isCollab:       isCollab || undefined,
+    };
+
     if (isEditing) {
-      updateVideo(editVideo!.id, { title, platform, language, formatType });
+      updateVideo(editVideo!.id, { title, platform, language, formatType, ...extended });
       onClose();
       return;
     }
@@ -166,6 +201,7 @@ export default function AddVideoModal({ open, onClose, editVideo }: Props) {
       language,
       formatType,
       createdAt: new Date().toISOString(),
+      ...extended,
       metrics: {
         views: 0, avgWatchTime: 0, retention: 0,
         saves: 0, shares: 0, comments: 0, follows: 0,
@@ -389,6 +425,71 @@ export default function AddVideoModal({ open, onClose, editVideo }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* ── Context & Tracking (collapsible) ── */}
+              <div className="border border-white/[0.07] rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setShowAdvanced(s => !s)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-white/[0.03] transition-colors"
+                >
+                  <span className="text-xs font-medium text-zinc-400">Context &amp; Tracking</span>
+                  <ChevronDown className={cn('w-3.5 h-3.5 text-zinc-600 transition-transform', showAdvanced && 'rotate-180')} />
+                </button>
+                {showAdvanced && (
+                  <div className="px-3 pb-3 space-y-3 border-t border-white/[0.06] pt-3">
+
+                    {/* Content pillar */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-zinc-500">Content Pillar</Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {PILLARS.map(p => (
+                          <button key={p.value} onClick={() => setContentPillar(contentPillar === p.value ? '' : p.value)}
+                            className={cn('px-2 py-1 rounded-lg text-[11px] font-medium border transition-all',
+                              contentPillar === p.value ? p.color : 'border-white/[0.07] text-zinc-600 hover:text-zinc-400 bg-white/[0.02]')}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Posted at + audio */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-500">Posted at</Label>
+                        <input type="datetime-local" value={postedAt} onChange={e => setPostedAt(e.target.value)}
+                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 outline-none focus:border-violet-500/40" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-500">Audio track</Label>
+                        <input value={audioTrack} onChange={e => setAudioTrack(e.target.value)} placeholder="Sound name…"
+                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder:text-zinc-700 outline-none focus:border-violet-500/40" />
+                      </div>
+                    </div>
+
+                    {/* Series */}
+                    <div className="space-y-1">
+                      <Label className="text-xs text-zinc-500">Series name</Label>
+                      <input value={series} onChange={e => setSeries(e.target.value)} placeholder="e.g. Cocktail Basics, or leave blank"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 placeholder:text-zinc-700 outline-none focus:border-violet-500/40" />
+                    </div>
+
+                    {/* Flags */}
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={isBrandDeal} onChange={e => setIsBrandDeal(e.target.checked)}
+                          className="w-3.5 h-3.5 rounded accent-violet-500" />
+                        <span className="text-xs text-zinc-400">Brand deal / sponsored</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={isCollab} onChange={e => setIsCollab(e.target.checked)}
+                          className="w-3.5 h-3.5 rounded accent-violet-500" />
+                        <span className="text-xs text-zinc-400">Collab / duet / stitch</span>
+                      </label>
+                    </div>
+
+                  </div>
+                )}
               </div>
 
               {/* Metrics note */}

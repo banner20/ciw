@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/store/useStore';
 import {
-  RefreshCw, CloudUpload, CloudDownload, CheckCircle2,
+  RefreshCw, CloudDownload, CheckCircle2,
   AlertCircle, X, ExternalLink, Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ function NotionIcon({ className }: { className?: string }) {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type SyncState = 'idle' | 'connecting' | 'pushing' | 'pulling' | 'done' | 'error';
+type SyncState = 'idle' | 'connecting' | 'pulling' | 'done' | 'error';
 
 interface SyncResult {
   created: number;
@@ -60,48 +60,6 @@ export default function NotionSync() {
       setErrorMsg(e instanceof Error ? e.message : String(e));
     }
   }, []);
-
-  // ── Push all ideas → Notion ──────────────────────────────────────────────────
-
-  const pushAll = useCallback(async () => {
-    setSyncState('pushing');
-    setErrorMsg('');
-    setResult(null);
-    try {
-      const res  = await fetch('/api/notion/push', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ ideas }),
-      });
-      const data = await res.json();
-      if (!data.ok && !data.results) throw new Error(data.error);
-
-      // Update notionPageId on newly created ideas
-      for (const r of data.results ?? []) {
-        if ((r.action === 'created' || r.action === 'updated') && r.notionPageId) {
-          updateIdea(r.id, {
-            notionPageId:   r.notionPageId,
-            notionSyncedAt: new Date().toISOString(),
-          });
-        }
-      }
-
-      const summary = data.summary ?? {};
-      setResult({
-        created: summary.created ?? 0,
-        updated: summary.updated ?? 0,
-        pulled:  0,
-        errors:  summary.errors ?? 0,
-      });
-      setSyncState('done');
-      toast.success(`Pushed to Notion`, {
-        description: `${summary.created ?? 0} created · ${summary.updated ?? 0} updated`,
-      });
-    } catch (e) {
-      setSyncState('error');
-      setErrorMsg(e instanceof Error ? e.message : String(e));
-    }
-  }, [ideas, updateIdea]);
 
   // ── Pull from Notion → SM Tool ───────────────────────────────────────────────
 
@@ -172,7 +130,7 @@ export default function NotionSync() {
   // ── Unsynced count ───────────────────────────────────────────────────────────
 
   const unsyncedCount = ideas.filter(i => !i.notionPageId).length;
-  const isWorking = syncState === 'connecting' || syncState === 'pushing' || syncState === 'pulling';
+  const isWorking = syncState === 'connecting' || syncState === 'pulling';
 
   return (
     <>
@@ -313,29 +271,12 @@ export default function NotionSync() {
                 )}
 
                 {/* Action buttons */}
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    onClick={pushAll}
-                    disabled={isWorking || ideas.length === 0}
-                    className={cn(
-                      'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all',
-                      'bg-white/[0.06] border border-white/[0.09] text-zinc-300',
-                      'hover:bg-white/[0.10] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed'
-                    )}
-                  >
-                    {syncState === 'pushing' ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <CloudUpload className="w-3.5 h-3.5" />
-                    )}
-                    {syncState === 'pushing' ? 'Pushing…' : 'Push to Notion'}
-                  </button>
-
+                <div className="pt-1">
                   <button
                     onClick={pullFromNotion}
                     disabled={isWorking}
                     className={cn(
-                      'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all',
+                      'w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all',
                       'bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed'
                     )}
                   >
@@ -350,16 +291,11 @@ export default function NotionSync() {
 
                 {/* How it works */}
                 <div className="pt-1 border-t border-white/[0.05] space-y-1.5">
-                  <p className="text-[10px] text-zinc-700 font-medium uppercase tracking-wider">How sync works</p>
-                  {[
-                    ['Push to Notion', 'Sends all SM Tool ideas → your Content Pipeline. Creates new pages or updates existing ones.'],
-                    ['Pull from Notion', 'Reads your Content Pipeline. Updates matched ideas. Imports new ones with no SM Tool ID.'],
-                  ].map(([title, desc]) => (
-                    <div key={title} className="flex gap-2">
-                      <span className="text-[10px] text-zinc-500 font-medium shrink-0 w-24">{title}</span>
-                      <span className="text-[10px] text-zinc-700 leading-snug">{desc}</span>
-                    </div>
-                  ))}
+                  <p className="text-[10px] text-zinc-700 font-medium uppercase tracking-wider">How pull works</p>
+                  <p className="text-[10px] text-zinc-600 leading-relaxed">
+                    Reads your Notion Content Pipeline. Pages with an existing <span className="text-zinc-500">SM Tool ID</span> are matched and updated. Pages without one are imported as new ideas. No data is written to Notion.
+                  </p>
+                  <p className="text-[10px] text-zinc-700 italic">Push (SM Tool → Notion) coming soon.</p>
                 </div>
 
               </div>

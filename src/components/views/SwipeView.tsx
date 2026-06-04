@@ -210,22 +210,33 @@ function SwipeModal({ initial, onClose }: SwipeModalProps) {
   const { addSwipeItem, updateSwipeItem } = useStore();
   const isEdit = !!initial;
 
-  const [title,    setTitle]    = useState(initial?.title    ?? '');
-  const [url,      setUrl]      = useState(initial?.url      ?? '');
-  const [notes,    setNotes]    = useState(initial?.notes    ?? '');
-  const [creator,  setCreator]  = useState(initial?.creator  ?? '');
-  const [platform, setPlatform] = useState<Platform | ''>(initial?.platform ?? '');
-  const [tagInput, setTagInput] = useState(initial?.tags.join(', ') ?? '');
+  const [title,         setTitle]         = useState(initial?.title         ?? '');
+  const [url,           setUrl]           = useState(initial?.url           ?? '');
+  const [notes,         setNotes]         = useState(initial?.notes         ?? '');
+  const [creator,       setCreator]       = useState(initial?.creator       ?? '');
+  const [platform,      setPlatform]      = useState<Platform | ''>(initial?.platform ?? '');
+  const [tagInput,      setTagInput]      = useState(initial?.tags.join(', ') ?? '');
+  const [viewCount,     setViewCount]     = useState(initial?.viewCount?.toString() ?? '');
+  const [hookType,      setHookType]      = useState<import('@/types').HookType | ''>(initial?.hookType ?? '');
+  const [contentPillar, setContentPillar] = useState<import('@/types').ContentPillar | ''>(initial?.contentPillar ?? '');
+  const [editStyle,     setEditStyle]     = useState<import('@/types').EditStyle | ''>(initial?.editStyle ?? '');
 
   const tags = tagInput.split(',').map(t => t.trim()).filter(Boolean);
+
+  const extended = {
+    viewCount:     viewCount ? parseInt(viewCount) : undefined,
+    hookType:      hookType      || undefined,
+    contentPillar: contentPillar || undefined,
+    editStyle:     editStyle     || undefined,
+  } as Partial<import('@/types').SwipeItem>;
 
   function submit() {
     if (!title.trim()) return;
     if (isEdit && initial) {
-      updateSwipeItem(initial.id, { title: title.trim(), url: url.trim() || undefined, notes: notes.trim(), tags, platform: platform || undefined, creator: creator.trim() || undefined });
+      updateSwipeItem(initial.id, { title: title.trim(), url: url.trim() || undefined, notes: notes.trim(), tags, platform: platform || undefined, creator: creator.trim() || undefined, ...extended });
       toast.success('Swipe item updated');
     } else {
-      addSwipeItem({ id: `swipe-${Date.now()}`, title: title.trim(), url: url.trim() || undefined, notes: notes.trim(), tags, platform: platform || undefined, creator: creator.trim() || undefined, savedAt: new Date().toISOString() });
+      addSwipeItem({ id: `swipe-${Date.now()}`, title: title.trim(), url: url.trim() || undefined, notes: notes.trim(), tags, platform: platform || undefined, creator: creator.trim() || undefined, savedAt: new Date().toISOString(), ...extended });
       toast.success('Saved to swipe file');
     }
     onClose();
@@ -263,6 +274,42 @@ function SwipeModal({ initial, onClose }: SwipeModalProps) {
 
         <input placeholder="Tags: hook, transition, b-roll…" value={tagInput} onChange={e => setTagInput(e.target.value)}
           className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/40" />
+
+        {/* Extended tracking */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* View count */}
+          <input type="number" min="0" placeholder="Views when saved" value={viewCount} onChange={e => setViewCount(e.target.value)}
+            className="bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/40" />
+
+          {/* Content pillar */}
+          <select value={contentPillar} onChange={e => setContentPillar(e.target.value as import('@/types').ContentPillar | '')}
+            className="bg-[#1a1a1f] border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none">
+            <option value="">Pillar —</option>
+            {(['education','entertainment','inspiration','promotion','bts','other'] as const).map(p => (
+              <option key={p} value={p} className="capitalize">{p === 'bts' ? 'Behind Scenes' : p.charAt(0).toUpperCase() + p.slice(1)}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {/* Hook type */}
+          <select value={hookType} onChange={e => setHookType(e.target.value as import('@/types').HookType | '')}
+            className="bg-[#1a1a1f] border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none">
+            <option value="">Hook type —</option>
+            {(['curiosity-gap','bold-statement','pain-point','visual','question','story','stat'] as const).map(h => (
+              <option key={h} value={h}>{h.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</option>
+            ))}
+          </select>
+
+          {/* Edit style */}
+          <select value={editStyle} onChange={e => setEditStyle(e.target.value as import('@/types').EditStyle | '')}
+            className="bg-[#1a1a1f] border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none">
+            <option value="">Edit style —</option>
+            {(['fast-cuts','slow-burn','text-heavy','no-cuts','mixed'] as const).map(s => (
+              <option key={s} value={s}>{s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</option>
+            ))}
+          </select>
+        </div>
 
         <div className="flex gap-2 pt-1">
           <button onClick={submit} disabled={!title.trim()}

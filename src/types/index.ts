@@ -4,6 +4,15 @@ export type Platform    = 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'link
 export type FormatType  = 'short' | 'long' | 'reel' | 'story' | 'live' | 'other';
 export type Language    = 'en' | 'hi' | 'es' | 'fr' | 'other';
 
+// ── New taxonomy types ────────────────────────────────────────────────────────
+export type ContentPillar  = 'education' | 'entertainment' | 'inspiration' | 'promotion' | 'bts' | 'other';
+export type TargetEmotion  = 'curiosity' | 'humor' | 'awe' | 'fear' | 'inspiration' | 'outrage' | 'nostalgia';
+export type IdeaDifficulty = 'quick' | 'standard' | 'production';
+export type EnergyLevel    = 'low' | 'medium' | 'high';
+export type BrollType      = 'selfie' | 'broll' | 'screen' | 'motion-graphic' | 'text-overlay' | 'mixed';
+export type HookType       = 'curiosity-gap' | 'bold-statement' | 'pain-point' | 'visual' | 'question' | 'story' | 'stat';
+export type EditStyle      = 'fast-cuts' | 'slow-burn' | 'text-heavy' | 'no-cuts' | 'mixed';
+
 // ── Workspaces ────────────────────────────────────────────────────────────────
 export type Workspace = 'intelligence' | 'ideas' | 'review';
 
@@ -21,6 +30,13 @@ export interface Metrics {
   shares: number;
   comments: number;
   follows: number;
+  // extended performance metrics (all optional — fill in as available)
+  impressions?: number;       // total times shown in feed
+  reach?: number;             // unique accounts reached
+  thumbnailCTR?: number;      // click-through rate % on thumbnail
+  firstHourViews?: number;    // view velocity signal
+  profileVisits?: number;     // profile visits driven by this video
+  followsFromVideo?: number;  // follows attributed to this specific video
 }
 
 export interface MetricSnapshot {
@@ -57,6 +73,17 @@ export interface Video {
   script?: string;
   retentionCurve?: number[];
   retentionCurveMethod?: 'ai' | 'canvas' | 'manual';
+  // extended video tracking
+  postedAt?: string;           // ISO datetime of actual post (≠ createdAt)
+  postHour?: number;           // 0-23 — hour of day posted, for time-of-day analysis
+  audioTrack?: string;         // trending sound / original audio name
+  hashtagsUsed?: string[];     // hashtags actually on the published post
+  captionLength?: number;      // char count of published caption
+  isBrandDeal?: boolean;       // sponsored/paid partnership (flags for avg exclusion)
+  isCollab?: boolean;          // duet / stitch / collab post
+  contentPillar?: ContentPillar;
+  series?: string;             // series name if part of a content series
+  repurposedFrom?: Platform;   // original platform if cross-posted
 }
 
 export interface Segment {
@@ -71,6 +98,11 @@ export interface Segment {
   color: string;
   confidence?: number;
   isOverlapping?: boolean;
+  // extended segment tracking
+  energyLevel?: EnergyLevel;    // pacing/energy of this segment
+  dropOffMarker?: boolean;      // known audience drop-off point
+  brollType?: BrollType;        // type of footage in this segment
+  speakingPace?: number;        // words per minute (auto-calc or manual)
 }
 
 export interface Tag {
@@ -138,6 +170,14 @@ export interface Idea {
   caption?: string;
   hashtags?: string[];
   createdAt: string;
+  // extended idea tracking
+  contentPillar?: ContentPillar;
+  targetEmotion?: TargetEmotion;   // emotion to trigger in the viewer
+  keyMessage?: string;             // the ONE takeaway sentence
+  estimatedDuration?: number;      // planned video length in seconds
+  difficulty?: IdeaDifficulty;     // effort/production level
+  targetAudience?: string;         // who specifically this is for
+  postDeadline?: string;           // YYYY-MM-DD — must-be-done-by (≠ scheduledDate = goes-live-at)
   // notion sync
   notionPageId?: string;   // Notion page ID — set after first push
   brand?: string;          // Brand name (maps to Notion Brand field)
@@ -175,6 +215,11 @@ export interface Goal {
   deadline?: string; // YYYY-MM-DD
   status: 'active' | 'achieved' | 'missed';
   createdAt: string;
+  // extended goal tracking
+  weeklyMilestone?: number;   // weekly sub-target for pacing
+  contentPillar?: ContentPillar;
+  strategy?: string;          // notes on how to hit this goal
+  notes?: string;
 }
 
 export interface SwipeItem {
@@ -186,6 +231,11 @@ export interface SwipeItem {
   platform?: Platform;
   creator?: string;
   savedAt: string;
+  // extended swipe tracking
+  viewCount?: number;          // views on the original post when saved (context)
+  hookType?: HookType;         // technique used in the hook
+  contentPillar?: ContentPillar;
+  editStyle?: EditStyle;       // editing approach for reference
 }
 
 // ── Legacy AppState (kept for compat) ────────────────────────────────────────
