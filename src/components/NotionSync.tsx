@@ -2,6 +2,17 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/store/useStore';
+
+const NOTION_COLUMNS = [
+  { id: 'no-status',     label: 'No Status',     color: '#71717a' },
+  { id: 'idea',          label: 'Idea',          color: '#eab308' },
+  { id: 'to-work-on',    label: 'To Work On',    color: '#f97316' },
+  { id: 'scripting',     label: 'Scripting',     color: '#3b82f6' },
+  { id: 'filming-ready', label: 'Filming Ready', color: '#8b5cf6' },
+  { id: 'editing',       label: 'Editing',       color: '#ec4899' },
+  { id: 'ready',         label: 'Ready',         color: '#06b6d4' },
+  { id: 'posted',        label: 'Posted',        color: '#10b981' },
+];
 import {
   RefreshCw, CloudDownload, CheckCircle2,
   AlertCircle, X, ExternalLink, Zap,
@@ -35,7 +46,7 @@ interface SyncResult {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function NotionSync() {
-  const { ideas, updateIdea, addIdea } = useStore();
+  const { ideas, updateIdea, addIdea, setIdeaColumns } = useStore();
   const [open,       setOpen]       = useState(false);
   const [syncState,  setSyncState]  = useState<SyncState>('idle');
   const [result,     setResult]     = useState<SyncResult | null>(null);
@@ -95,25 +106,43 @@ export default function NotionSync() {
       }
 
       // Create new ideas from Notion items with no SM Tool ID
+      // — but first check if we already imported this Notion page (match by notionPageId)
       for (const partial of data.newFromNotion ?? []) {
-        const newIdea: Idea = {
-          id:            `idea-notion-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          projectId:     ideas[0]?.projectId ?? 'default',
-          title:         partial.title        ?? 'Untitled',
-          hook:          partial.hook         ?? '',
-          body:          partial.body         ?? '',
-          brand:         partial.brand,
-          status:        partial.status       ?? 'idea',
-          platform:      partial.platform,
-          formatType:    partial.formatType,
-          tags:          [],
-          createdAt:     new Date().toISOString(),
-          notionPageId:  partial.notionPageId,
-          notionSyncedAt: new Date().toISOString(),
-          scheduledDate: partial.scheduledDate,
-        };
-        addIdea(newIdea);
-        created++;
+        const existingByNotionId = ideas.find(i => i.notionPageId === partial.notionPageId);
+        if (existingByNotionId) {
+          // Already imported — just update fields
+          updateIdea(existingByNotionId.id, {
+            title:         partial.title         ?? existingByNotionId.title,
+            body:          partial.body          ?? existingByNotionId.body,
+            hook:          partial.hook          ?? existingByNotionId.hook,
+            brand:         partial.brand         ?? existingByNotionId.brand,
+            status:        partial.status        ?? existingByNotionId.status,
+            scheduledDate: partial.scheduledDate ?? existingByNotionId.scheduledDate,
+            formatType:    partial.formatType    ?? existingByNotionId.formatType,
+            platform:      partial.platform      ?? existingByNotionId.platform,
+            notionSyncedAt: new Date().toISOString(),
+          });
+          updated++;
+        } else {
+          const newIdea: Idea = {
+            id:            `idea-notion-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            projectId:     ideas[0]?.projectId ?? 'default',
+            title:         partial.title        ?? 'Untitled',
+            hook:          partial.hook         ?? '',
+            body:          partial.body         ?? '',
+            brand:         partial.brand,
+            status:        partial.status       ?? 'idea',
+            platform:      partial.platform,
+            formatType:    partial.formatType,
+            tags:          [],
+            createdAt:     new Date().toISOString(),
+            notionPageId:  partial.notionPageId,
+            notionSyncedAt: new Date().toISOString(),
+            scheduledDate: partial.scheduledDate,
+          };
+          addIdea(newIdea);
+          created++;
+        }
       }
 
       setResult({ created, updated, pulled: created + updated, errors: 0 });
@@ -288,6 +317,14 @@ export default function NotionSync() {
                     {syncState === 'pulling' ? 'Pulling…' : 'Pull from Notion'}
                   </button>
                 </div>
+
+                {/* Reset columns */}
+                <button
+                  onClick={() => { setIdeaColumns(NOTION_COLUMNS); toast.success('Board columns reset to Notion structure'); }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all bg-white/[0.04] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.07]"
+                >
+                  Reset board columns to Notion structure
+                </button>
 
                 {/* How it works */}
                 <div className="pt-1 border-t border-white/[0.05] space-y-1.5">
