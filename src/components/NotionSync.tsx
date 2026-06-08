@@ -46,7 +46,7 @@ interface SyncResult {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function NotionSync() {
-  const { ideas, updateIdea, addIdea, setIdeaColumns } = useStore();
+  const { ideas, updateIdea, addIdea, setIdeaColumns, deleteIdea } = useStore();
   const [open,       setOpen]       = useState(false);
   const [syncState,  setSyncState]  = useState<SyncState>('idle');
   const [result,     setResult]     = useState<SyncResult | null>(null);
@@ -155,6 +155,41 @@ export default function NotionSync() {
       setErrorMsg(e instanceof Error ? e.message : String(e));
     }
   }, [ideas, updateIdea, addIdea]);
+
+  // ── Deduplicate ideas ────────────────────────────────────────────────────────
+
+  const deduplicateIdeas = useCallback(() => {
+    const toDelete: string[] = [];
+
+    // 1. Dedupe by notionPageId — keep the one with a script or most recent createdAt
+    const byNotionId = new Map<string, typeof ideas[number]>();
+    for (const idea of ideas) {
+      if (!idea.notionPageId) continue;
+      const existing = byNotionId.get(idea.notionPageId);
+      if (!existing) { byNotionId.set(idea.notionPageId, idea); continue; }
+      // Keep whichever was created earlier (the original import)
+      const keepExisting = existing.createdAt <= idea.createdAt;
+      toDelete.push(keepExisting ? idea.id : existing.id);
+      byNotionId.set(idea.notionPageId, keepExisting ? existing : idea);
+    }
+
+    // 2. Dedupe by title (case-insensitive) among remaining — keep earliest
+    const seen = new Map<string, string>(); // normalised title → id to keep
+    for (const idea of ideas) {
+      if (toDelete.includes(idea.id)) continue;
+      const key = idea.title.trim().toLowerCase();
+      if (!key) continue;
+      const keepId = seen.get(key);
+      if (!keepId) { seen.set(key, idea.id); continue; }
+      // Keep the one already in the map (earliest seen), delete this one
+      toDelete.push(idea.id);
+    }
+
+    toDelete.forEach(id => deleteIdea(id));
+    toast.success(`Removed ${toDelete.length} duplicate${toDelete.length !== 1 ? 's' : ''}`, {
+      description: `${ideas.length - toDelete.length} ideas remaining`,
+    });
+  }, [ideas, deleteIdea]);
 
   // ── Unsynced count ───────────────────────────────────────────────────────────
 
@@ -318,13 +353,21 @@ export default function NotionSync() {
                   </button>
                 </div>
 
-                {/* Reset columns */}
-                <button
-                  onClick={() => { setIdeaColumns(NOTION_COLUMNS); toast.success('Board columns reset to Notion structure'); }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all bg-white/[0.04] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.07]"
-                >
-                  Reset board columns to Notion structure
-                </button>
+                {/* Utility buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => { setIdeaColumns(NOTION_COLUMNS); toast.success('Columns reset to Notion structure'); }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all bg-white/[0.04] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.07]"
+                  >
+                    Reset columns
+                  </button>
+                  <button
+                    onClick={deduplicateIdeas}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all bg-red-500/10 border border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/15"
+                  >
+                    Remove duplicates
+                  </button>
+                </div>
 
                 {/* How it works */}
                 <div className="pt-1 border-t border-white/[0.05] space-y-1.5">
