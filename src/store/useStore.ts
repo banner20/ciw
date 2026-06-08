@@ -126,11 +126,14 @@ export const useStore = create<Store>()(
       tags:            SEED_TAGS,
       insights:        SEED_INSIGHTS,
       ideaColumns: [
-        { id: 'draft',     label: 'Draft',     color: '#71717a' },
-        { id: 'scripting', label: 'Scripting', color: '#3b82f6' },
-        { id: 'ready',     label: 'Ready',     color: '#8b5cf6' },
-        { id: 'filmed',    label: 'Filmed',    color: '#f59e0b' },
-        { id: 'published', label: 'Published', color: '#10b981' },
+        { id: 'no-status',     label: 'No Status',     color: '#71717a' },
+        { id: 'idea',          label: 'Idea',          color: '#eab308' },
+        { id: 'to-work-on',    label: 'To Work On',    color: '#f97316' },
+        { id: 'scripting',     label: 'Scripting',     color: '#3b82f6' },
+        { id: 'filming-ready', label: 'Filming Ready', color: '#8b5cf6' },
+        { id: 'editing',       label: 'Editing',       color: '#ec4899' },
+        { id: 'ready',         label: 'Ready',         color: '#06b6d4' },
+        { id: 'posted',        label: 'Posted',        color: '#10b981' },
       ],
       ideas:           [],
       scripts:         [],
@@ -175,8 +178,13 @@ export const useStore = create<Store>()(
           if (hasData) {
             set({
               ...data,
-              // Use fetched ideaColumns only if non-empty, else keep defaults
-              ideaColumns: data.ideaColumns.length > 0 ? data.ideaColumns : get().ideaColumns,
+              // Use fetched ideaColumns, migrate old 5-column default to new 8-column Notion-aligned set
+              ideaColumns: (() => {
+                const cols = data.ideaColumns.length > 0 ? data.ideaColumns : get().ideaColumns;
+                const OLD_IDS = ['draft','scripting','ready','filmed','published'];
+                const isOldDefault = cols.length === 5 && cols.every((c, i) => c.id === OLD_IDS[i]);
+                return isOldDefault ? get().ideaColumns : cols;
+              })(),
               activeProjectId: data.projects[0]?.id ?? get().activeProjectId,
               backendActive: true,
             });

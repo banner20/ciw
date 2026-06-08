@@ -4,22 +4,28 @@ import type { Idea, FormatType, Platform } from '@/types';
 
 // SM Tool kanban status → Notion Select value (exact string in your DB)
 export const STATUS_TO_NOTION: Record<string, string> = {
-  idea:     '💡 Idea',
-  scripted: '✍️ Scripting',
-  ready:    '🎥 Filming Ready',
-  filmed:   '✂️ Editing',
-  posted:   '✅ Posted',
+  'no-status':     'No Status',
+  'idea':          'Idea',
+  'to-work-on':    'TO WORK ON',
+  'scripting':     'Scripting',
+  'filming-ready': 'Filming Ready',
+  'editing':       'Editing',
+  'ready':         'Ready',
+  'posted':        'Posted',
 };
 
-// Notion Status value → SM Tool status (normalise: strip emojis, lowercase, partial match)
+// Notion Status value → SM Tool status (strip emojis, lowercase, partial match)
 export function notionStatusToSMTool(notionStatus: string): string {
-  const lower = notionStatus.toLowerCase();
-  if (lower.includes('idea'))    return 'idea';
-  if (lower.includes('script'))  return 'scripted';
-  if (lower.includes('film') || lower.includes('ready')) return 'ready';
-  if (lower.includes('edit'))    return 'filmed';
-  if (lower.includes('post'))    return 'posted';
-  return 'idea'; // fallback
+  const lower = notionStatus.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  if (!lower || lower === 'no status') return 'no-status';
+  if (lower === 'idea')                return 'idea';
+  if (lower.includes('work on') || lower === 'to work on') return 'to-work-on';
+  if (lower.includes('script'))        return 'scripting';
+  if (lower.includes('filming') || lower === 'filming ready') return 'filming-ready';
+  if (lower.includes('edit'))          return 'editing';
+  if (lower === 'ready')               return 'ready';
+  if (lower.includes('post'))          return 'posted';
+  return 'no-status';
 }
 
 // ── Format/Type maps ──────────────────────────────────────────────────────────
