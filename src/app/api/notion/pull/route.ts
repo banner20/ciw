@@ -36,9 +36,9 @@ export async function GET() {
 
     while (hasMore) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response: any = await (notion as any).dataSources.query({
-        data_source_id: dbId,
-        page_size:      100,
+      const response: any = await (notion as any).databases.query({
+        database_id: dbId,
+        page_size:   100,
         ...(cursor ? { start_cursor: cursor } : {}),
       });
       pages.push(...(response.results ?? []));
