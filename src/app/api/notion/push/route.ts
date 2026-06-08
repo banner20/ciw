@@ -51,9 +51,10 @@ export async function POST(request: NextRequest) {
           return { id: idea.id, notionPageId: idea.notionPageId, action: 'updated' as const };
         } else {
           // Create new Notion page
-          const page = await notion.pages.create({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const page = await (notion.pages.create as any)({
             parent:     { database_id: dbId },
-            properties: properties as Parameters<typeof notion.pages.create>[0]['properties'],
+            properties,
           });
           return { id: idea.id, notionPageId: page.id, action: 'created' as const };
         }
