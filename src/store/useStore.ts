@@ -176,18 +176,22 @@ export const useStore = create<Store>()(
           const hasData = data.projects.length > 0 || data.videos.length > 0 || data.ideas.length > 0;
 
           if (hasData) {
+            const OLD_IDS = new Set(['draft', 'filmed', 'published']);
+            const fetchedCols = data.ideaColumns.length > 0 ? data.ideaColumns : get().ideaColumns;
+            const needsMigration = fetchedCols.some(c => OLD_IDS.has(c.id));
+            const migratedCols = needsMigration ? get().ideaColumns : fetchedCols;
+
             set({
               ...data,
-              // Use fetched ideaColumns, migrate old 5-column default to new 8-column Notion-aligned set
-              ideaColumns: (() => {
-                const cols = data.ideaColumns.length > 0 ? data.ideaColumns : get().ideaColumns;
-                const OLD_IDS = ['draft','scripting','ready','filmed','published'];
-                const isOldDefault = cols.length === 5 && cols.every((c, i) => c.id === OLD_IDS[i]);
-                return isOldDefault ? get().ideaColumns : cols;
-              })(),
+              ideaColumns: migratedCols,
               activeProjectId: data.projects[0]?.id ?? get().activeProjectId,
               backendActive: true,
             });
+
+            // Persist migrated columns back to DB so they stick
+            if (needsMigration) {
+              db.saveIdeaColumns(migratedCols).catch(() => {});
+            }
           } else {
             // Fresh account — seed the DB with the current local data
             const s = get();
