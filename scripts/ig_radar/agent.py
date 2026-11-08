@@ -8,18 +8,20 @@ It runs on YOUR computer, logged into your separate scraping account, and:
   - sends the results straight into Radar in the app
   - also pulls automatically if the last pull was 7+ days ago
 
-Setup (once)
-  pip install instaloader==4.14.1
-  instaloader --login YOUR_SCRAPING_ACCOUNT
-  In the app: Radar → "Connect your computer" → Generate token
+Easiest: double-click start-radar.bat (Windows) or start-radar.command (Mac).
+It logs in by reusing the scraping account's Firefox login, so you never type
+the Instagram password here, and asks for the app URL + token on first run.
 
-Run (leave it open)
-  python agent.py --app https://your-app.vercel.app --token rdr_xxx --user YOUR_SCRAPING_ACCOUNT
+Manual:
+  pip install instaloader==4.14.1 browser_cookie3
+  python agent.py --browser firefox                     # first run asks for app URL + token
+  python agent.py --app URL --token rdr_xxx --user ACCOUNT   # or use a saved instaloader session
 
 Add --once to do a single pull right now and exit.
 """
 import argparse
 import json
+import os
 import random
 import sys
 import time
@@ -33,6 +35,50 @@ except ImportError:
     sys.exit("Instaloader is not installed. Run:  pip install instaloader==4.14.1")
 
 from pull import pull_creator  # same scraping logic as the CSV script
+
+CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".radar-config.json")
+
+
+def load_config():
+    try:
+        with open(CONFIG) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_config(cfg):
+    with open(CONFIG, "w") as f:
+        json.dump(cfg, f, indent=2)
+    try:
+        os.chmod(CONFIG, 0o600)
+    except OSError:
+        pass
+
+
+def login_from_browser(L, browser):
+    """Reuse the scraping account's existing browser login (no password typed here)."""
+    try:
+        import browser_cookie3
+    except ImportError:
+        sys.exit("Missing browser_cookie3. Run:  pip install browser_cookie3")
+    fn = getattr(browser_cookie3, browser.lower(), None)
+    if not fn:
+        sys.exit(f"Unsupported browser '{browser}'. Use firefox (recommended), chrome, edge, brave or safari.")
+    try:
+        cookies = {c.name: c.value for c in fn() if "instagram" in c.domain}
+    except Exception as e:
+        sys.exit(f"Couldn't read {browser} cookies ({e}). Close {browser} completely and try again.")
+    if "sessionid" not in cookies:
+        sys.exit(f"Not logged into Instagram in {browser}. Open instagram.com in {browser}, log in with the "
+                 f"SCRAPING account, then run this again.")
+    L.context.update_cookies(cookies)
+    username = L.test_login()
+    if not username:
+        sys.exit(f"The {browser} Instagram login looks expired. Log in again at instagram.com in {browser}.")
+    L.context.username = username
+    L.save_session_to_file()
+    return username
 
 
 class App:
@@ -106,24 +152,46 @@ def run_pull(L, app, handles, limit):
 
 def main():
     ap = argparse.ArgumentParser(description="Radar helper: scrape on this computer, results go to the app")
-    ap.add_argument("--app", required=True, help="your app's URL, e.g. https://your-app.vercel.app")
-    ap.add_argument("--token", required=True, help="token from Radar → Connect your computer")
-    ap.add_argument("--user", required=True, help="scraping account (logged in via `instaloader --login`)")
+    ap.add_argument("--app", help="your app's URL, e.g. https://your-app.vercel.app (saved after first run)")
+    ap.add_argument("--token", help="token from Radar → Connect your computer (saved after first run)")
+    ap.add_argument("--user", help="scraping account with a saved instaloader session")
+    ap.add_argument("--browser", help="reuse the scraping account's login from this browser, e.g. firefox")
     ap.add_argument("--posts", type=int, default=30, help="recent posts per creator")
     ap.add_argument("--interval", type=int, default=120, help="seconds between checks (min 60)")
     ap.add_argument("--auto-days", type=float, default=7, help="auto-pull if last pull is older than this; 0 = off")
     ap.add_argument("--once", action="store_true", help="pull all tracked creators now and exit")
     args = ap.parse_args()
 
+    cfg = load_config()
+    app_url = args.app or cfg.get("app")
+    token = args.token or cfg.get("token")
+    if not app_url:
+        app_url = input("Your app's address (e.g. https://your-app.vercel.app): ").strip()
+    if not token:
+        token = input("Token from the app (Radar → Connect your computer → Generate token): ").strip()
+    if not app_url.startswith("http") or not token.startswith("rdr_"):
+        sys.exit("That address or token doesn't look right. Run again and paste them from the app.")
+    cfg.update({"app": app_url.rstrip("/"), "token": token})
+
     L = instaloader.Instaloader(download_pictures=False, download_videos=False, download_video_thumbnails=False,
                                 download_geotags=False, download_comments=False, save_metadata=False, quiet=True)
-    try:
-        L.load_session_from_file(args.user)
-    except FileNotFoundError:
-        sys.exit(f"No saved session for {args.user}. Run:  instaloader --login {args.user}")
+    browser = args.browser or cfg.get("browser")
+    user = args.user or cfg.get("user")
+    if browser and not args.user:
+        user = login_from_browser(L, browser)
+        cfg["browser"] = browser
+    elif user:
+        try:
+            L.load_session_from_file(user)
+        except FileNotFoundError:
+            sys.exit(f"No saved session for {user}. Use --browser firefox, or run:  instaloader --login {user}")
+    else:
+        sys.exit("Tell me how to log in: --browser firefox (recommended) or --user ACCOUNT.")
+    cfg["user"] = user
+    save_config(cfg)
 
-    app = App(args.app, args.token)
-    print(f"Radar helper connected to {app.base} as @{args.user}. Ctrl+C to stop.")
+    app = App(cfg["app"], cfg["token"])
+    print(f"Radar helper connected to {app.base} as @{user}. Leave this window open. Ctrl+C to stop.")
 
     while True:
         try:

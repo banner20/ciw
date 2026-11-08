@@ -22,11 +22,10 @@ account. That account must log in from your own computer: Instagram flags logins
 from cloud servers. So scraping runs in a small helper on your machine, and the
 app controls it.
 
-1. `pip install instaloader==4.14.1`
-2. `instaloader --login YOUR_SCRAPING_ACCOUNT` (once; the password stays local)
-3. In the app: **Radar → Connect your computer → Generate token**
-4. From `scripts/ig_radar`, run the command the dialog shows:
-   `python agent.py --app https://your-app.vercel.app --token rdr_… --user YOUR_SCRAPING_ACCOUNT`
+1. Log into the **scraping** Instagram account in **Firefox** (no password is ever typed into the helper).
+2. In the app: **Radar → Connect your computer → Generate token**.
+3. Double-click `scripts/ig_radar/start-radar.bat` (Windows) or `start-radar.command` (Mac).
+   First run asks for the app address + token and remembers them.
 
 Leave it running. **Pull latest** in the app is picked up within ~2 minutes,
 results stream into Radar creator by creator, and it auto-pulls if the last pull
