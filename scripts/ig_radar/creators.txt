@@ -1,0 +1,8 @@
+# One Instagram handle per line. Lines starting with # are ignored.
+# Competitors
+mixitupwithmendi
+sipwithkush
+taste_maker2
+sonalholland_masterofwine
+anshbhatia._
+# Other niches (formats worth borrowing): add ~5 below
