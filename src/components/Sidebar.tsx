@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Film, Clock, Table2, GitFork, Lightbulb, Tag, Settings, Zap,
   KanbanSquare, FileText, CalendarDays, BookOpen,
-  LayoutDashboard, Target, Bookmark, TrendingUp,
+  LayoutDashboard, Target, Bookmark, TrendingUp, Radar,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ const IDEAS_NAV = [
   { id: 'calendar', label: 'Calendar',    icon: CalendarDays },
   { id: 'briefs',   label: 'Briefs',      icon: BookOpen },
   { id: 'swipe',    label: 'Swipe File',  icon: Bookmark },
+  { id: 'radar',    label: 'Radar',       icon: Radar },
 ] as const;
 
 const REVIEW_NAV = [

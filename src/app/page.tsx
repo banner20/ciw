@@ -28,6 +28,7 @@ import ReviewDashboardView from '@/components/views/ReviewDashboardView';
 import GoalsView           from '@/components/views/GoalsView';
 import SwipeView           from '@/components/views/SwipeView';
 import ReportsView         from '@/components/views/ReportsView';
+import RadarView           from '@/components/views/RadarView';
 
 const VIEW_COMPONENTS: Record<string, React.ComponentType> = {
   // intelligence
@@ -48,6 +49,7 @@ const VIEW_COMPONENTS: Record<string, React.ComponentType> = {
   goals:     GoalsView,
   swipe:     SwipeView,
   reports:   ReportsView,
+  radar:     RadarView,
 };
 
 function Fallback({ view }: { view: string }) {

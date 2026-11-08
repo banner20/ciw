@@ -125,3 +125,34 @@ alter table public.swipe_items enable row level security;
 create policy "Users manage own swipe items" on public.swipe_items
   for all using (auth.uid() = user_id);
 create index if not exists swipe_items_user_id_idx on public.swipe_items(user_id);
+
+-- ── Radar: tracking other creators' content ─────────────────────────────────
+
+-- creators we watch (competitors, adjacent niches)
+create table if not exists public.radar_creators (
+  id       text not null,
+  user_id  uuid not null references auth.users(id) on delete cascade,
+  handle   text not null,
+  added_at timestamptz default now(),
+  payload  jsonb not null,
+  primary key (user_id, id)
+);
+alter table public.radar_creators enable row level security;
+create policy "Users manage own radar creators" on public.radar_creators
+  for all using (auth.uid() = user_id);
+
+-- posts pulled from tracked creators, hashtag discovery, or imports
+create table if not exists public.radar_posts (
+  id         text not null,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  handle     text not null,
+  source     text,
+  posted_at  timestamptz,
+  updated_at timestamptz default now(),
+  payload    jsonb not null,
+  primary key (user_id, id)
+);
+alter table public.radar_posts enable row level security;
+create policy "Users manage own radar posts" on public.radar_posts
+  for all using (auth.uid() = user_id);
+create index if not exists radar_posts_user_handle_idx on public.radar_posts(user_id, handle);
