@@ -15,11 +15,29 @@ turns the winners into transcripts, breakdowns and swipe-file entries.
    - Optional: `APIFY_PROFILE_ACTOR` (default `apify/instagram-reel-scraper`),
      `APIFY_HASHTAG_ACTOR` (default `apify/instagram-hashtag-scraper`).
 
-## Three ways to get data in
+## Connect your computer (main way to pull competitors)
+
+Many drinks accounts are age-restricted, so they can only be read by a logged-in
+account. That account must log in from your own computer: Instagram flags logins
+from cloud servers. So scraping runs in a small helper on your machine, and the
+app controls it.
+
+1. `pip install instaloader==4.14.1`
+2. `instaloader --login YOUR_SCRAPING_ACCOUNT` (once; the password stays local)
+3. In the app: **Radar → Connect your computer → Generate token**
+4. From `scripts/ig_radar`, run the command the dialog shows:
+   `python agent.py --app https://your-app.vercel.app --token rdr_… --user YOUR_SCRAPING_ACCOUNT`
+
+Leave it running. **Pull latest** in the app is picked up within ~2 minutes,
+results stream into Radar creator by creator, and it auto-pulls if the last pull
+was 7+ days ago. The status dot under the button shows if it's online.
+Requires `SUPABASE_SERVICE_ROLE_KEY` in Vercel (already used by other routes).
+
+## Other ways to get data in
 
 | Way | Needs | Best for |
 | --- | --- | --- |
-| **Pull latest** on tracked creators | `APIFY_TOKEN` | Weekly competitor check-ins |
+| **Pull latest** with the helper offline | `APIFY_TOKEN` | Public profiles only |
 | **Discover by hashtag** | `APIFY_TOKEN` | Finding viral posts outside your watchlist |
 | **Import yt-dlp / Apify JSON** | nothing | Data you've already scraped yourself |
 

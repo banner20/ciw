@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Radar, Plus, RefreshCw, Trash2, Upload, Search, Hash, X, ExternalLink,
-  Sparkles, Mic, Bookmark, Flame, Loader2, FileText, Users, Wand2,
+  Sparkles, Mic, Bookmark, Flame, Loader2, FileText, Users, Wand2, Laptop, Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,14 @@ const WINDOWS = [
 ] as const;
 
 const NICHE_KEY = 'radar:niche';
+const ONLINE_MS = 5 * 60_000; // helper polls every ~2 min; offline after 5
+
+function isOnline(a: rdb.RadarAgentStatus | null) {
+  return !!a?.last_seen_at && Date.now() - new Date(a.last_seen_at).getTime() < ONLINE_MS;
+}
+function agentBusy(a: rdb.RadarAgentStatus | null) {
+  return !!a && (!!a.pull_requested_at || !!a.last_status?.startsWith('running'));
+}
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -76,12 +84,29 @@ export default function RadarView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const [agent, setAgent] = useState<rdb.RadarAgentStatus | null>(null);
+  const [connectOpen, setConnectOpen] = useState(false);
 
   useEffect(() => {
+    rdb.fetchAgent().then(setAgent);
     rdb.fetchRadar().then(({ creators, posts, error }) => {
       setCreators(creators); postsRef.current = posts; setPosts(posts); setLoadError(error); setLoading(false);
     });
   }, []);
+
+  // While the computer helper is working, refresh status + results every 15s.
+  const busyAgent = agentBusy(agent);
+  useEffect(() => {
+    if (!busyAgent) return;
+    const t = setInterval(async () => {
+      const a = await rdb.fetchAgent();
+      setAgent(a);
+      const { creators, posts } = await rdb.fetchRadar();
+      postsRef.current = posts; setPosts(posts); setCreators(creators);
+      if (!agentBusy(a)) toast.success(a?.last_status ? `Pull finished: ${a.last_status}` : 'Pull finished');
+    }, 15_000);
+    return () => clearInterval(t);
+  }, [busyAgent]);
 
   const saveNiche = (v: string) => {
     setNiche(v);
@@ -137,6 +162,16 @@ export default function RadarView() {
 
   async function refreshCreators(list: RadarCreator[]) {
     if (!list.length) return;
+    // Preferred: the helper on your computer (logged-in scraping account, sees age-restricted profiles)
+    if (isOnline(agent)) {
+      const handles = list.length === creators.length ? null : list.map(c => c.handle);
+      const err = await rdb.requestAgentPull(handles);
+      if (err) { toast.error(err); return; }
+      setAgent(a => a && { ...a, pull_requested_at: new Date().toISOString(), pull_handles: handles, last_status: 'requested' });
+      toast.success('Sent to your computer. It starts within ~2 minutes; results appear here as each creator finishes.');
+      return;
+    }
+    if (agent) toast('Your computer helper is offline, so trying Apify instead (public profiles only).');
     setBusy(`Pulling ${list.length === 1 ? '@' + list[0].handle : list.length + ' creators'}…`);
     try {
       // small batches keep each Apify run under the function time limit
@@ -322,6 +357,14 @@ export default function RadarView() {
             className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs border border-white/[0.08] text-zinc-300 hover:bg-white/[0.04] disabled:opacity-40">
             <RefreshCw className="w-3 h-3" /> Pull latest for all
           </button>
+          <button onClick={() => setConnectOpen(true)}
+            className="w-full flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-300">
+            <Laptop className="w-3 h-3" />
+            <span className={cn('w-1.5 h-1.5 rounded-full', isOnline(agent) ? 'bg-emerald-400' : 'bg-zinc-600')} />
+            {!agent ? 'Connect your computer (scraping account)'
+              : isOnline(agent) ? (busyAgent ? `Computer: ${agent.last_status ?? 'working'}…` : 'Computer online')
+              : 'Computer offline. Start the helper'}
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto py-1">
@@ -498,6 +541,10 @@ export default function RadarView() {
         </div>
       </section>
 
+      {connectOpen && (
+        <ConnectDialog agent={agent} onClose={() => setConnectOpen(false)} onCreated={() => rdb.fetchAgent().then(setAgent)} />
+      )}
+
       {selected && (
         <PostPanel
           key={selected.id}
@@ -636,5 +683,77 @@ function PostPanel({ post, onClose, onTranscribe, onAnalyze, onSaveTranscript, o
         </button>
       </div>
     </aside>
+  );
+}
+
+// ── Connect-your-computer dialog ─────────────────────────────────────────────
+
+function ConnectDialog({ agent, onClose, onCreated }: {
+  agent: rdb.RadarAgentStatus | null; onClose: () => void; onCreated: () => void;
+}) {
+  const [token, setToken] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
+  const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+  async function generate() {
+    if (agent && !confirm('This replaces the old token. The helper using it will stop working until you update it. Continue?')) return;
+    setWorking(true);
+    const { token, error } = await rdb.createAgentToken();
+    setWorking(false);
+    if (error) { toast.error(error); return; }
+    setToken(token!); onCreated();
+  }
+
+  const cmd = `python agent.py --app ${appUrl} --token ${token ?? '<token>'} --user YOUR_SCRAPING_ACCOUNT`;
+  const copy = (t: string) => { navigator.clipboard.writeText(t); toast.success('Copied'); };
+  const step = 'text-[11px] text-zinc-400 leading-relaxed';
+  const code = 'block bg-black/40 border border-white/[0.06] rounded-lg px-2.5 py-2 text-[11px] text-zinc-200 font-mono break-all';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-[#18181c] border border-white/10 rounded-2xl w-full max-w-[520px] max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-2">
+          <Laptop className="w-4 h-4 text-violet-400" />
+          <h2 className="text-sm font-semibold text-white flex-1">Connect your computer</h2>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X className="w-4 h-4" /></button>
+        </div>
+        <p className={step}>
+          Scraping runs on your computer, logged into your <b>separate scraping account</b>, so it can see age-restricted
+          profiles and Instagram doesn&apos;t flag a cloud login. The app tells it what to pull and the results land here.
+        </p>
+
+        <ol className="space-y-3 list-decimal pl-4">
+          <li className={step}>
+            Install once (needs Python), from the repo&apos;s <code>scripts/ig_radar</code> folder:
+            <code className={code}>pip install instaloader==4.14.1</code>
+          </li>
+          <li className={step}>
+            Log the scraping account in once. The password stays on your computer:
+            <code className={code}>instaloader --login YOUR_SCRAPING_ACCOUNT</code>
+          </li>
+          <li className={step}>
+            Generate a token for this app:{' '}
+            <button disabled={working} onClick={generate}
+              className="ml-1 px-2 py-0.5 rounded-md bg-violet-500/20 border border-violet-500/30 text-violet-200 hover:bg-violet-500/30 disabled:opacity-40">
+              {agent ? 'Generate new token' : 'Generate token'}
+            </button>
+            {token && <span className="block mt-1 text-amber-300/80">Shown once. Copy the command below now.</span>}
+          </li>
+          <li className={step}>
+            Start the helper and leave it running. It checks for &ldquo;Pull latest&rdquo; every ~2 minutes and auto-pulls weekly:
+            <span className="flex items-start gap-1.5">
+              <code className={code}>{cmd}</code>
+              {token && <button onClick={() => copy(cmd)} className="mt-1 text-zinc-500 hover:text-white"><Copy className="w-3.5 h-3.5" /></button>}
+            </span>
+          </li>
+        </ol>
+
+        <p className="text-[10px] text-zinc-600 leading-relaxed">
+          Status: {!agent ? 'not connected' : isOnline(agent) ? 'online' : 'offline'}
+          {agent?.last_run_at ? ` · last pull ${new Date(agent.last_run_at).toLocaleString()}` : ''}
+          {agent?.last_status ? ` · ${agent.last_status}` : ''}
+        </p>
+      </div>
+    </div>
   );
 }

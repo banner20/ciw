@@ -156,3 +156,20 @@ alter table public.radar_posts enable row level security;
 create policy "Users manage own radar posts" on public.radar_posts
   for all using (auth.uid() = user_id);
 create index if not exists radar_posts_user_handle_idx on public.radar_posts(user_id, handle);
+
+-- Radar scraper connection: a helper running on the user's own computer
+-- (logged into their scraping account) authenticates with a token and
+-- pulls creators on request. Only the SHA-256 of the token is stored.
+create table if not exists public.radar_agents (
+  user_id           uuid primary key references auth.users(id) on delete cascade,
+  token_hash        text not null unique,
+  created_at        timestamptz default now(),
+  last_seen_at      timestamptz,
+  pull_requested_at timestamptz,
+  pull_handles      jsonb,            -- null = all tracked creators
+  last_run_at       timestamptz,
+  last_status       text
+);
+alter table public.radar_agents enable row level security;
+create policy "Users manage own radar agent" on public.radar_agents
+  for all using (auth.uid() = user_id);
