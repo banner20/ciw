@@ -17,7 +17,7 @@ export type EditStyle      = 'fast-cuts' | 'slow-burn' | 'text-heavy' | 'no-cuts
 export type Workspace = 'intelligence' | 'ideas' | 'review';
 
 export type IntelligenceView = 'library' | 'timeline' | 'table' | 'flow' | 'insights' | 'tags' | 'settings';
-export type IdeasView        = 'ideas' | 'script' | 'calendar' | 'briefs' | 'swipe';
+export type IdeasView        = 'ideas' | 'script' | 'calendar' | 'briefs' | 'swipe' | 'radar';
 export type ReviewView       = 'dashboard' | 'goals' | 'reports';
 export type ActiveView       = IntelligenceView | IdeasView | ReviewView;
 

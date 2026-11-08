@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Logged in but on an auth page → home
-  if (user && isAuthRoute && pathname !== '/auth/callback') {
+  if (user && isAuthRoute && pathname !== '/auth/callback' && pathname !== '/auth/reset-password') {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);

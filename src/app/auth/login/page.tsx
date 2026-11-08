@@ -22,12 +22,51 @@ function LoginForm() {
     params.get('error') ? 'Authentication failed. Please try again.' : null
   );
 
-  // If already logged in, redirect
+  const [notice,   setNotice]   = useState<string | null>(null);
+
+  // If already logged in, redirect. Also finish logins from emailed links
+  // (magic link / password recovery sent from the Supabase dashboard), which
+  // arrive as #access_token=… in the URL. The app's client uses the PKCE flow
+  // and won't pick those up on its own, so set the session from them here.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
-      if (data.session) router.replace('/');
-    });
+    let cancelled = false;
+    async function run() {
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const accessToken  = hash.get('access_token');
+      const refreshToken = hash.get('refresh_token');
+      const hashError    = hash.get('error_description');
+      if (hashError || accessToken) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      if (hashError) {
+        if (!cancelled) setError(`${hashError.replace(/\+/g, ' ')}. Request a new link.`);
+        return;
+      }
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (cancelled) return;
+        if (error) { setError(`That link didn't work (${error.message}). Request a new one.`); return; }
+        router.replace(hash.get('type') === 'recovery' ? '/auth/reset-password' : '/');
+        return;
+      }
+      const { data } = await supabase.auth.getSession() as { data: { session: Session | null } };
+      if (!cancelled && data.session) router.replace('/');
+    }
+    run();
+    return () => { cancelled = true; };
   }, [router, supabase.auth]);
+
+  async function handleForgot() {
+    setError(null); setNotice(null);
+    if (!email) { setError('Type your email above first, then click "Forgot password?".'); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+    });
+    setLoading(false);
+    if (error) setError(error.message);
+    else setNotice(`If ${email} has an account, a reset link is on its way. Open it in this same browser.`);
+  }
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +113,12 @@ function LoginForm() {
                             rounded-xl px-3 py-2.5">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <p className="text-xs text-red-300">{error}</p>
+            </div>
+          )}
+
+          {notice && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2.5">
+              <p className="text-xs text-emerald-300">{notice}</p>
             </div>
           )}
 
@@ -133,6 +178,13 @@ function LoginForm() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
               >
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <div className="flex justify-end -mt-1">
+              <button type="button" onClick={handleForgot} disabled={loading}
+                className="text-[11px] text-zinc-500 hover:text-violet-300 transition-colors disabled:opacity-50">
+                Forgot password?
               </button>
             </div>
 
