@@ -31,6 +31,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith('/auth');
 
+  // The Radar helper on the user's computer authenticates with its own token
+  if (pathname.startsWith('/api/radar/agent')) return response;
+
   // Not logged in and trying to access a protected route → login
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();

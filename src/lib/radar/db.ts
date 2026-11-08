@@ -58,3 +58,43 @@ export async function deletePosts(ids: string[]): Promise<void> {
   const { error } = await sb().from('radar_posts').delete().in('id', ids);
   if (error) console.error('[radar] deletePosts:', error);
 }
+
+// ── computer helper (scraper running on the user's machine) ─────────────────
+
+export interface RadarAgentStatus {
+  last_seen_at: string | null;
+  pull_requested_at: string | null;
+  pull_handles: string[] | null;
+  last_run_at: string | null;
+  last_status: string | null;
+}
+
+export async function fetchAgent(): Promise<RadarAgentStatus | null> {
+  const { data, error } = await sb().from('radar_agents')
+    .select('last_seen_at, pull_requested_at, pull_handles, last_run_at, last_status').maybeSingle();
+  if (error) console.error('[radar] fetchAgent:', error);
+  return (data as RadarAgentStatus | null) ?? null;
+}
+
+/** Creates (or replaces) the helper token. Returns the plain token once; only its hash is stored. */
+export async function createAgentToken(): Promise<{ token?: string; error?: string }> {
+  const userId = await uid(); if (!userId) return { error: 'Not signed in' };
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = 'rdr_' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  const tokenHash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+  const { error } = await sb().from('radar_agents').upsert({
+    user_id: userId, token_hash: tokenHash, created_at: new Date().toISOString(),
+    last_seen_at: null, pull_requested_at: null, pull_handles: null, last_status: null,
+  });
+  if (error) return { error: error.message };
+  return { token };
+}
+
+export async function requestAgentPull(handles: string[] | null): Promise<string | undefined> {
+  const userId = await uid(); if (!userId) return 'Not signed in';
+  const { error } = await sb().from('radar_agents')
+    .update({ pull_requested_at: new Date().toISOString(), pull_handles: handles, last_status: 'requested' })
+    .eq('user_id', userId);
+  return error?.message;
+}

@@ -73,6 +73,9 @@ def pull_creator(L, handle, limit):
             "duration_s": round(post.video_duration or 0),
             "pinned": getattr(post, "is_pinned", False),
             "caption": (post.caption or "").replace("\n", " ")[:300],
+            "full_caption": post.caption or "",
+            "thumbnail_url": getattr(post, "url", None),
+            "media_url": post.video_url,
         })
         if len(rows) >= limit:
             break
@@ -133,13 +136,13 @@ def main():
     cols = ["handle", "vs_usual", "views", "median_views", "likes", "comments", "age_days", "duration_s",
             "followers", "pinned", "posted_utc", "url", "shortcode", "caption"]
     with open(out / f"reels_{stamp}.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=cols); w.writeheader(); w.writerows(all_rows)
+        w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore"); w.writeheader(); w.writerows(all_rows)
 
     outliers = sorted(
         [r for r in all_rows if r["vs_usual"] and r["vs_usual"] >= args.threshold and r["age_days"] >= args.min_age_days],
         key=lambda r: -r["vs_usual"])
     with open(out / f"outliers_{stamp}.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=cols); w.writeheader(); w.writerows(outliers)
+        w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore"); w.writeheader(); w.writerows(outliers)
 
     print(f"\n{len(all_rows)} reels saved -> {out / f'reels_{stamp}.csv'}")
     print(f"{len(outliers)} outliers (>= {args.threshold}x usual) -> {out / f'outliers_{stamp}.csv'}\n")

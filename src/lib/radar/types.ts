@@ -11,6 +11,7 @@ export interface RadarCreator {
   notes?: string;
   addedAt: string;
   lastFetchedAt?: string;
+  followers?: number;
 }
 
 /** A point-in-time read of a post's numbers, so we can see momentum. */
